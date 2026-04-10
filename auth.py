@@ -15,6 +15,7 @@
 #   Credential verification and JWT issuance, used by POST /auth/token.
 # -----------------------------------------------------------------------
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -26,6 +27,8 @@ from jose import JWTError, jwt
 from config import settings
 from repository import fetch_user_by_username
 from schemas import AuthenticatedUser
+
+logger = logging.getLogger(__name__)
 
 # FastAPI's built-in OAuth2 helper — extracts the Bearer token from the
 # Authorization header and passes it to get_current_user as a string.
@@ -77,6 +80,7 @@ async def authenticate_user(
     """
     user = await fetch_user_by_username(conn, username)
     if not user or not verify_password(password, user["hashed_password"]):
+        logger.warning("Failed login attempt for username=%r", username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -112,8 +116,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Authenticated
         email: str | None = payload.get("email")
         if user_id is None or email is None:
             raise credentials_exception
-    except JWTError:
-        # Covers expired tokens, bad signatures, and malformed JWTs
+    except JWTError as exc:
+        logger.warning("JWT validation failed: %s", exc)
         raise credentials_exception
 
     return AuthenticatedUser(id=int(user_id), email=email)

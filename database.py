@@ -11,10 +11,14 @@
 #   - Acquire connections via: async with request.app.state.pool.acquire() as conn
 # -----------------------------------------------------------------------
 
+import logging
+
 import asyncpg
 from fastapi import FastAPI
 
 from config import settings
+
+logger = logging.getLogger(__name__)
 
 
 async def init_db_pool(app: FastAPI) -> None:
@@ -22,11 +26,16 @@ async def init_db_pool(app: FastAPI) -> None:
     Create the asyncpg connection pool and attach it to app.state.pool.
     Called once at application startup.
     """
-    app.state.pool = await asyncpg.create_pool(
-        dsn=settings.DATABASE_URL,
-        min_size=2,   # keep at least 2 connections warm
-        max_size=10,  # cap at 10 concurrent connections
-    )
+    try:
+        app.state.pool = await asyncpg.create_pool(
+            dsn=settings.DATABASE_URL,
+            min_size=2,   # keep at least 2 connections warm
+            max_size=10,  # cap at 10 concurrent connections
+        )
+        logger.info("Database connection pool created (min=2, max=10)")
+    except Exception:
+        logger.exception("Failed to create database connection pool")
+        raise
 
 
 async def close_db_pool(app: FastAPI) -> None:
@@ -35,3 +44,4 @@ async def close_db_pool(app: FastAPI) -> None:
     Called once at application shutdown.
     """
     await app.state.pool.close()
+    logger.info("Database connection pool closed")

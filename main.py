@@ -18,13 +18,18 @@
 #   - shutdown: close_db_pool
 # -----------------------------------------------------------------------
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
+from logger import setup_logging
 from auth import authenticate_user, create_access_token, get_current_user, verify_ownership
 from database import close_db_pool, init_db_pool
+
+setup_logging()
+logger = logging.getLogger(__name__)
 from schemas import (
     AuthenticatedUser,
     ErrorResponse,
@@ -47,8 +52,10 @@ async def lifespan(app: FastAPI):
     per the Database Connection Pool component spec.
     """
     await init_db_pool(app)
+    logger.info("Application startup complete")
     yield
     await close_db_pool(app)
+    logger.info("Application shutdown complete")
 
 
 # ---------------------------------------------------------------------------
@@ -77,8 +84,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     Catch any unhandled exception (e.g. unexpected DB errors) and return
     a sanitized 503 — never expose internal details to the client.
     """
-    # Log the real error server-side (replace with your logger in production)
-    print(f"Unhandled error on {request.url}: {exc!r}")
+    logger.exception("Unhandled error on %s", request.url)
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={"detail": "Service temporarily unavailable. Please try again later."},

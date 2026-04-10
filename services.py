@@ -10,6 +10,7 @@
 #       -> PaginatedOrderResponse
 # -----------------------------------------------------------------------
 
+import logging
 import math
 
 import asyncpg
@@ -17,6 +18,8 @@ from fastapi import HTTPException, status
 
 from repository import fetch_orders_by_user_id, fetch_user_by_id
 from schemas import OrderItem, PaginatedOrderResponse
+
+logger = logging.getLogger(__name__)
 
 PAGE_SIZE = 10  # Fixed per spec: 10 orders per page
 
@@ -43,6 +46,7 @@ async def get_orders_for_user(
     # This distinguishes a 404 (unknown user) from an empty order list.
     user = await fetch_user_by_id(conn, user_id)
     if user is None:
+        logger.warning("Order history requested for non-existent user_id=%d", user_id)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User {user_id} not found",
