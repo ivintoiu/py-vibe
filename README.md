@@ -1,8 +1,13 @@
 # PY-VIBE: Order History API
 
-A Python REST API built with **FastAPI** and **asyncpg** that lets authenticated users retrieve their own paginated order history from a PostgreSQL database.
+❗ This repository is a personal exercise of Vibe Coding. The project does not have any value. It is just a flow state, some LLM magic, and a vision that came together one prompt at a time. The code reflects a moment in time where the logic felt right, the prompts were hitting, and the aesthetic mattered as much as the execution.
+* Logic Style: Intuitive and emergent.
+* Dev Stack: Python + Pure Inspiration.
+* Vibe Check: Passed.
 
 ## Features
+
+A Python REST API built with **FastAPI** and **asyncpg** that lets authenticated users retrieve their own paginated order history from a PostgreSQL database.
 
 - **JWT authentication** — issue tokens via `POST /auth/token`
 - **Ownership enforcement** — users can only access their own orders (403 otherwise)
