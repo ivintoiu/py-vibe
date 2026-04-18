@@ -21,15 +21,15 @@
 import logging
 from contextlib import asynccontextmanager
 
+from logger import setup_logging
+
+setup_logging()
+
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
-from logger import setup_logging
 from auth import authenticate_user, create_access_token, get_current_user, verify_ownership
 from database import close_db_pool, init_db_pool
-
-setup_logging()
-logger = logging.getLogger(__name__)
 from schemas import (
     AuthenticatedUser,
     ErrorResponse,
@@ -38,6 +38,8 @@ from schemas import (
     TokenResponse,
 )
 from services import get_orders_for_user
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
