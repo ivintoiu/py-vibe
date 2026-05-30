@@ -25,19 +25,19 @@ from logger import setup_logging
 
 setup_logging()
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, HTTPException, Request, status  # noqa: E402
+from fastapi.responses import JSONResponse  # noqa: E402
 
-from auth import authenticate_user, create_access_token, get_current_user, verify_ownership
-from database import close_db_pool, init_db_pool
-from schemas import (
+from auth import authenticate_user, create_access_token, get_current_user, verify_ownership  # noqa: E402
+from database import close_db_pool, init_db_pool  # noqa: E402
+from schemas import (  # noqa: E402
     AuthenticatedUser,
     ErrorResponse,
     PaginatedOrderResponse,
     TokenRequest,
     TokenResponse,
 )
-from services import get_orders_for_user
+from services import get_orders_for_user  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

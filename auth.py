@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import asyncpg
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 

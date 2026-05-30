@@ -1,4 +1,4 @@
-# config.py 
+# config.py
 '''
 Configuration component (DesignSpec: Configuration)
 Loads DATABASE_URL, JWT_SECRET, JWT_ALGORITHM, and JWT_EXPIRE_MINUTES

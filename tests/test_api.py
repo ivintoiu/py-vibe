@@ -1,11 +1,8 @@
 from datetime import datetime, timezone
 from decimal import Decimal
-from unittest.mock import AsyncMock, patch
 
 import bcrypt
-import pytest
 
-from tests.conftest import make_token
 
 _NOW = datetime.now(timezone.utc)
 _PLAIN = "secret"
