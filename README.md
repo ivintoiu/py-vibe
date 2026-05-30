@@ -17,19 +17,92 @@ A Python REST API built with **FastAPI** and **asyncpg** that lets authenticated
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart TD
+    Client(["Client"])
+
+    subgraph API ["API Layer (main.py)"]
+        Token["POST /auth/token"]
+        Orders["GET /users/{user_id}/orders"]
+        EH["Exception Handler\n503 on unhandled errors"]
+    end
+
+    subgraph Auth ["Auth (auth.py)"]
+        AuthUser["authenticate_user()\nfetch user + bcrypt verify"]
+        CreateToken["create_access_token()\nsign JWT"]
+        GetUser["get_current_user()\ndecode + validate JWT"]
+        OwnerGuard["verify_ownership()\ncaller == user_id → 403"]
+    end
+
+    subgraph Svc ["Order Service (services.py)"]
+        GetOrders["get_orders_for_user()\npaginate + 404 guard"]
+    end
+
+    subgraph Repo ["Repository (repository.py)"]
+        FetchByUsername["fetch_user_by_username()"]
+        FetchById["fetch_user_by_id()"]
+        FetchOrders["fetch_orders_by_user_id()\nLIMIT / OFFSET + COUNT OVER()"]
+    end
+
+    subgraph Infra ["Infrastructure"]
+        Pool["asyncpg Connection Pool\n(database.py)\nmin=2 max=10"]
+        Config["Settings\n(config.py)\nDATABASE_URL · JWT_SECRET"]
+        Logger["Structured Logger\n(logger.py)\n→ py-vibe.log"]
+        DB[("PostgreSQL\nusers · orders")]
+    end
+
+    Client -->|"POST credentials"| Token
+    Client -->|"GET + Bearer JWT"| Orders
+
+    Token --> AuthUser
+    AuthUser --> FetchByUsername
+    AuthUser --> CreateToken
+    CreateToken -->|"JWT"| Client
+
+    Orders --> GetUser
+    GetUser -->|"401 invalid token"| Client
+    Orders --> OwnerGuard
+    OwnerGuard -->|"403 wrong user"| Client
+    Orders --> GetOrders
+    GetOrders --> FetchById
+    GetOrders --> FetchOrders
+    GetOrders -->|"PaginatedOrderResponse"| Client
+    GetOrders -->|"404 user not found"| Client
+
+    FetchByUsername --> Pool
+    FetchById --> Pool
+    FetchOrders --> Pool
+    Pool <-->|"asyncpg"| DB
+
+    Config -.->|"DSN"| Pool
+    Config -.->|"JWT_SECRET"| Auth
+    Logger -.->|"log calls"| API
+    Logger -.->|"log calls"| Auth
+    Logger -.->|"log calls"| Svc
+    Logger -.->|"log calls"| Infra
+    EH -.->|"catches all"| API
+```
+
+---
+
 ## Project Structure
 
 ```
-orders_api/
-├── main.py          # API Layer — route handlers, app lifecycle
-├── auth.py          # Auth Middleware, Authorization Guard, Token Service helpers
-├── services.py      # Order Service — business logic + pagination
-├── repository.py    # Database Layer — all parameterized SQL queries
-├── database.py      # Connection Pool — asyncpg pool init/teardown
-├── schemas.py       # Pydantic Schemas — request/response models
-├── config.py        # Configuration — env vars via pydantic-settings
-├── schema.sql       # PostgreSQL table definitions
-├── requirements.txt
+py-vibe/
+├── main.py              # API Layer — route handlers, app lifecycle
+├── auth.py              # Auth Middleware, Authorization Guard, Token Service helpers
+├── services.py          # Order Service — business logic + pagination
+├── repository.py        # Database Layer — all parameterized SQL queries
+├── database.py          # Connection Pool — asyncpg pool init/teardown
+├── schemas.py           # Pydantic Schemas — request/response models
+├── config.py            # Configuration — env vars via pydantic-settings
+├── logger.py            # Structured logging setup
+├── schema.sql           # PostgreSQL table definitions
+├── seed.py              # Dev fixtures (alice + bob)
+├── docker-compose.yml   # Local PostgreSQL via Docker
+├── pyproject.toml       # Dependencies + tool config
 └── .env.example
 ```
 
@@ -37,26 +110,33 @@ orders_api/
 
 ## Setup
 
-### 1. Install dependencies
+### 1. Start the database
 
 ```bash
-pip install -r requirements.txt
+docker compose up -d
 ```
 
-### 2. Configure environment
+### 2. Install dependencies
+
+```bash
+uv sync
+```
+
+### 3. Configure environment
 
 ```bash
 cp .env.example .env
-# Edit .env with your real DATABASE_URL and a strong JWT_SECRET
+# Edit .env with your DATABASE_URL and a strong JWT_SECRET
 ```
 
-### 3. Create database tables
+### 4. Seed dev data (optional)
 
 ```bash
-psql -d your_database -f schema.sql
+python seed.py
+# Creates: alice / password123  and  bob / password456
 ```
 
-### 4. Run the server
+### 5. Run the server
 
 ```bash
 uvicorn main:app --reload
