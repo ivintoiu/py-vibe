@@ -1,6 +1,6 @@
 # PY-VIBE: Order History API
 
-❗ This repository is a personal exercise of Vibe Coding. The project does not have any value. It is just a flow state, some LLM magic, and a vision that came together one prompt at a time. The code reflects a moment in time where the logic felt right, the prompts were hitting, and the aesthetic mattered as much as the execution.
+❗ This repository is a personal exercise of Vibe and Agent Coding. The project does not have any value. It is just a flow state, some LLM magic, and a vision that came together one prompt at a time. The code reflects a moment in time where the logic felt right, the prompts were hitting, and the aesthetic mattered as much as the execution.
 * Logic Style: Intuitive and emergent.
 * Dev Stack: Python + Pure Inspiration.
 * Vibe Check: Passed.
