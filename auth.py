@@ -15,11 +15,16 @@
 #   Credential verification and JWT issuance, used by POST /auth/token.
 # -----------------------------------------------------------------------
 
+import hashlib
+import hmac
 import logging
+import secrets
+import time
 from datetime import datetime, timedelta, timezone
 
-import bcrypt
 import asyncpg
+import bcrypt
+import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -77,9 +82,15 @@ async def authenticate_user(
 
     Note: We deliberately return the same 401 message whether the username
     or password is wrong, to avoid leaking account existence (EdgeCase).
+    GitHub-only accounts (hashed_password IS NULL) always fail here — they
+    must authenticate via /auth/github.
     """
     user = await fetch_user_by_username(conn, username)
-    if not user or not verify_password(password, user["hashed_password"]):
+    if (
+        not user
+        or not user.get("hashed_password")
+        or not verify_password(password, user["hashed_password"])
+    ):
         logger.warning("Failed login attempt for username=%r", username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -139,3 +150,80 @@ def verify_ownership(caller_id: int, requested_user_id: int) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not authorized to access this resource",
         )
+
+
+# ---------------------------------------------------------------------------
+# GitHub OAuth helpers
+# ---------------------------------------------------------------------------
+
+def generate_oauth_state() -> str:
+    """Return a stateless CSRF token: `{timestamp}.{nonce}.{hmac_sig}`."""
+    ts = str(int(time.time()))
+    nonce = secrets.token_hex(16)
+    payload = f"{ts}.{nonce}"
+    sig = hmac.new(
+        settings.JWT_SECRET.encode(), payload.encode(), hashlib.sha256
+    ).hexdigest()
+    return f"{payload}.{sig}"
+
+
+def verify_oauth_state(state: str, max_age: int = 300) -> bool:
+    """Return True iff the state is a valid, unexpired token we generated."""
+    try:
+        parts = state.split(".")
+        if len(parts) != 3:
+            return False
+        ts_str, nonce, sig = parts
+        payload = f"{ts_str}.{nonce}"
+        expected = hmac.new(
+            settings.JWT_SECRET.encode(), payload.encode(), hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return False
+        return 0 <= int(time.time()) - int(ts_str) <= max_age
+    except Exception:
+        return False
+
+
+async def exchange_code_for_token(code: str) -> str | None:
+    """Exchange a GitHub OAuth `code` for an access token. Returns None on failure."""
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            "https://github.com/login/oauth/access_token",
+            data={
+                "client_id": settings.GITHUB_CLIENT_ID,
+                "client_secret": settings.GITHUB_CLIENT_SECRET,
+                "code": code,
+            },
+            headers={"Accept": "application/json"},
+        )
+    return resp.json().get("access_token")
+
+
+async def fetch_github_user(access_token: str) -> dict:
+    """
+    Fetch authenticated GitHub user profile.
+    Falls back to /user/emails when the primary email is set to private.
+    """
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github+json",
+    }
+    async with httpx.AsyncClient() as client:
+        user = (
+            await client.get("https://api.github.com/user", headers=headers)
+        ).json()
+        if not user.get("email"):
+            emails = (
+                await client.get("https://api.github.com/user/emails", headers=headers)
+            ).json()
+            primary = next(
+                (
+                    e["email"]
+                    for e in emails
+                    if e.get("primary") and e.get("verified")
+                ),
+                None,
+            )
+            user["email"] = primary
+    return user

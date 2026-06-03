@@ -20,16 +20,28 @@
 
 import logging
 from contextlib import asynccontextmanager
+from urllib.parse import urlencode
 
 from logger import setup_logging
 
 setup_logging()
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status  # noqa: E402
-from fastapi.responses import JSONResponse  # noqa: E402
+from fastapi.responses import JSONResponse, RedirectResponse  # noqa: E402
 
-from auth import authenticate_user, create_access_token, get_current_user, verify_ownership  # noqa: E402
-from database import close_db_pool, init_db_pool  # noqa: E402
+from auth import (  # noqa: E402
+    authenticate_user,
+    create_access_token,
+    exchange_code_for_token,
+    fetch_github_user,
+    generate_oauth_state,
+    get_current_user,
+    verify_oauth_state,
+    verify_ownership,
+)
+from config import settings  # noqa: E402
+from database import DatabaseInitError, close_db_pool, init_db_pool  # noqa: E402
+from repository import upsert_user_by_github  # noqa: E402
 from schemas import (  # noqa: E402
     AuthenticatedUser,
     ErrorResponse,
@@ -53,10 +65,25 @@ async def lifespan(app: FastAPI):
     Runs init_db_pool on startup and close_db_pool on shutdown,
     per the Database Connection Pool component spec.
     """
-    await init_db_pool(app)
-    logger.info("Application startup complete")
+    try:
+        await init_db_pool(app)
+        logger.info("Application startup complete")
+    except DatabaseInitError as e:
+        print("\n" + "=" * 70)
+        print("❌ DATABASE INITIALIZATION FAILED")
+        print("=" * 70)
+        print(f"Error: {e}")
+        print("\nTroubleshooting steps:")
+        print("  1. Ensure PostgreSQL is running: docker compose up -d")
+        print("  2. Verify DATABASE_URL in .env file")
+        print("  3. Check PostgreSQL logs: docker compose logs postgres")
+        print("=" * 70 + "\n")
+        raise
+
     yield
-    await close_db_pool(app)
+
+    if hasattr(app.state, 'pool') and app.state.pool:
+        await close_db_pool(app)
     logger.info("Application shutdown complete")
 
 
@@ -131,6 +158,88 @@ async def issue_token(
         data={"sub": str(user.id), "email": user.email}
     )
     return TokenResponse(access_token=access_token)
+
+
+# ---------------------------------------------------------------------------
+# GET /auth/github — GitHub OAuth: redirect to GitHub authorization page
+# ---------------------------------------------------------------------------
+
+@app.get(
+    "/auth/github",
+    summary="Initiate GitHub OAuth login",
+    tags=["Auth"],
+    status_code=307,
+)
+async def github_login():
+    """
+    Redirect the browser to GitHub's OAuth authorization page.
+    A stateless HMAC state token is embedded to guard against CSRF.
+    After the user grants access, GitHub redirects to /auth/github/callback.
+    """
+    state = generate_oauth_state()
+    params = urlencode({
+        "client_id": settings.GITHUB_CLIENT_ID,
+        "redirect_uri": settings.GITHUB_REDIRECT_URI,
+        "scope": "read:user user:email",
+        "state": state,
+    })
+    return RedirectResponse(f"https://github.com/login/oauth/authorize?{params}")
+
+
+# ---------------------------------------------------------------------------
+# GET /auth/github/callback — GitHub OAuth: exchange code for JWT
+# ---------------------------------------------------------------------------
+
+@app.get(
+    "/auth/github/callback",
+    response_model=TokenResponse,
+    responses={401: {"model": ErrorResponse}},
+    summary="GitHub OAuth callback — issues a JWT after successful GitHub login",
+    tags=["Auth"],
+)
+async def github_callback(request: Request, code: str, state: str) -> TokenResponse:
+    """
+    GitHub redirects here with `code` and `state` after the user approves.
+
+    Steps:
+      1. Verify state token (CSRF guard).
+      2. Exchange `code` for a GitHub access token.
+      3. Fetch GitHub user profile (resolves private emails via /user/emails).
+      4. Upsert user in DB (link existing account or create a new one).
+      5. Issue and return a signed JWT — same format as POST /auth/token.
+    """
+    if not verify_oauth_state(state):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid OAuth state",
+        )
+
+    gh_token = await exchange_code_for_token(code)
+    if not gh_token:
+        logger.warning("GitHub OAuth code exchange failed")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="GitHub OAuth failed",
+        )
+
+    gh_user = await fetch_github_user(gh_token)
+    email = gh_user.get("email")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="GitHub account has no verified email",
+        )
+
+    async with request.app.state.pool.acquire() as conn:
+        user = await upsert_user_by_github(
+            conn=conn,
+            github_id=gh_user["id"],
+            username=gh_user["login"],
+            email=email,
+        )
+
+    token = create_access_token(data={"sub": str(user["id"]), "email": user["email"]})
+    return TokenResponse(access_token=token)
 
 
 # ---------------------------------------------------------------------------

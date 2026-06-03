@@ -7,6 +7,8 @@
 #
 # Public interface:
 #   fetch_user_by_username(conn, username) -> dict | None
+#   fetch_user_by_id(conn, user_id) -> dict | None
+#   upsert_user_by_github(conn, github_id, username, email) -> dict
 #   fetch_orders_by_user_id(conn, user_id, limit, offset)
 #       -> {"orders": list[dict], "total": int}
 # -----------------------------------------------------------------------
@@ -50,6 +52,48 @@ async def fetch_user_by_id(
         user_id,
     )
     return dict(row) if row else None
+
+
+async def upsert_user_by_github(
+    conn: asyncpg.Connection,
+    github_id: int,
+    username: str,
+    email: str,
+) -> dict:
+    """
+    Find or create a user for a GitHub OAuth login.
+
+    Resolution order:
+      1. Existing row already linked to this github_id → return it.
+      2. Existing row with the same email (e.g. alice/bob) → link and return.
+      3. No match → INSERT a new GitHub-only user (hashed_password = NULL).
+    """
+    row = await conn.fetchrow(
+        "SELECT id, email FROM users WHERE github_id = $1",
+        github_id,
+    )
+    if row:
+        return dict(row)
+
+    row = await conn.fetchrow(
+        "UPDATE users SET github_id = $1 WHERE email = $2 RETURNING id, email",
+        github_id,
+        email,
+    )
+    if row:
+        return dict(row)
+
+    row = await conn.fetchrow(
+        """
+        INSERT INTO users (github_id, email, username, hashed_password)
+        VALUES ($1, $2, $3, NULL)
+        RETURNING id, email
+        """,
+        github_id,
+        email,
+        username,
+    )
+    return dict(row)
 
 
 async def fetch_orders_by_user_id(

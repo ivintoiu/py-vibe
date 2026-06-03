@@ -5,14 +5,20 @@
 -- -----------------------------------------------------------------------
 
 -- Users table
--- hashed_password should be a bcrypt hash (never store plaintext).
+-- hashed_password is NULL for GitHub-OAuth-only accounts.
+-- github_id is NULL for password-only accounts.
 CREATE TABLE IF NOT EXISTS users (
     id               SERIAL PRIMARY KEY,
     email            VARCHAR(255) NOT NULL UNIQUE,
     username         VARCHAR(100) NOT NULL UNIQUE,
-    hashed_password  VARCHAR(255) NOT NULL,
+    hashed_password  VARCHAR(255),
+    github_id        BIGINT UNIQUE,
     created_at       TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+-- Migration: apply to existing databases that predate GitHub OAuth support.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS github_id BIGINT UNIQUE;
+ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;
 
 -- Orders table
 -- items is a JSONB array of order line items, e.g.:
