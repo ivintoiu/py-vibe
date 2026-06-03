@@ -1,116 +1,203 @@
-# CLAUDE.md — py-vibe context
+# CLAUDE.md — VibeDrive Project Context
 
 ## What this project is
 
-A FastAPI + asyncpg REST API that lets authenticated users retrieve their own paginated order history from a PostgreSQL database. Personal exercise in Vibe and Agent Coding — no production intent.
+VibeDrive is a full-stack AI-powered personal learning planner. Users define skills, break them into milestones, track progress, and receive weekly AI-generated study plans with curated resources.
 
-## Tech stack
+**Status:** Scaffold phase — actively building out the architecture iteratively.
 
-| Layer | Tool |
+## Tech Stack
+
+| Layer | Technology |
 |---|---|
-| Framework | FastAPI |
-| DB driver | asyncpg (async, no ORM) |
-| Auth | python-jose (JWT) + bcrypt |
-| Config | pydantic-settings (.env) |
-| Package manager | **uv** (not pip — no requirements.txt) |
-| Linter | ruff |
-| Tests | pytest + pytest-asyncio + httpx |
-| Local DB | Docker Compose (postgres:16-alpine) |
+| **Framework** | FastAPI (Python), Next.js (React/TS) |
+| **Database** | PostgreSQL + asyncpg (async) |
+| **Cache/Jobs** | Redis + Celery |
+| **Vector DB** | Qdrant |
+| **Auth** | python-jose + JWT |
+| **AI** | LangChain + OpenAI API |
+| **Testing** | pytest + pytest-asyncio |
+| **Linting** | ruff, black, mypy |
+| **Deployment** | Docker, Kubernetes (optional), Terraform |
 
-## Project structure
+## Project Structure
 
 ```
-main.py          — API routes + lifespan (pool init/teardown)
-auth.py          — JWT issue/decode, bcrypt verify, ownership guard
-services.py      — business logic: pagination, 404 guard
-repository.py    — all SQL (asyncpg, parameterised, no string interpolation)
-database.py      — asyncpg pool init/close, attached to app.state.pool
-schemas.py       — Pydantic request/response models
-config.py        — Settings singleton (import `settings` everywhere)
-logger.py        — structured logging → py-vibe.log
-schema.sql       — CREATE TABLE users, orders + index
-seed.py          — inserts alice/bob with hashed passwords + 5 orders
-docker-compose.yml — postgres:16-alpine on :5432, schema auto-applied on first boot
-tests/
-  conftest.py    — client fixture (mocked pool), mock_conn, auth_headers
-  test_auth.py   — unit tests for auth.py functions
-  test_services.py — unit tests for services.py with mocked repository
-  test_api.py    — integration tests for all endpoints via TestClient
+vibedrive/
+├── backend/
+│   ├── src/
+│   │   ├── api/           — API route handlers
+│   │   ├── auth/          — JWT, OAuth2, password hashing
+│   │   ├── models/        — SQLModel ORM definitions
+│   │   ├── services/      — business logic layer
+│   │   ├── repository/    — data access layer
+│   │   ├── db/            — database initialization
+│   │   ├── config.py      — Settings & env vars
+│   │   └── main.py        — FastAPI app entry point
+│   ├── tests/
+│   ├── pyproject.toml
+│   └── Dockerfile
+│
+├── frontend/
+│   ├── src/
+│   │   ├── pages/         — Next.js pages & routes
+│   │   ├── components/    — React components
+│   │   ├── hooks/         — Custom React hooks
+│   │   ├── utils/         — Helper functions
+│   │   └── styles/        — Global styles
+│   ├── public/            — Static assets
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── Dockerfile
+│
+├── infrastructure/
+│   ├── docker-compose.yml — local dev stack
+│   ├── terraform/         — IaC for cloud deployment
+│   ├── k8s/              — Kubernetes manifests
+│   └── scripts/          — utility scripts
+│
+├── docs/                  — API, architecture, deployment guides
+├── specs/                 — Product specifications
+├── .env.example
+├── README.md
+└── CLAUDE.md (this file)
 ```
 
-## Important design decisions
+## Key Design Decisions
 
-### setup_logging() before local imports (main.py)
-`setup_logging()` is called at module level *before* the local imports so the logger is configured before any module-level code in auth/database/etc runs. The downstream imports carry `# noqa: E402` — this is intentional, do not "fix" it.
+### 1. Monorepo with Module Separation
+- **Why:** Easier to manage frontend+backend together, shared types/constants in future
+- **How:** Root `docker-compose.yml` orchestrates all services; each module has its own Dockerfile
 
-### No ORM
-Raw asyncpg SQL only. All queries are in `repository.py` with positional `$1/$2` parameters. Never use string interpolation in SQL.
+### 2. FastAPI + SQLModel (not Django ORM)
+- **Why:** Modern async-first framework, lightweight, educational
+- **How:** Raw SQLAlchemy async queries; structured logging; clean separation of layers
 
-### Connection pool on app.state
-`app.state.pool` is set by `init_db_pool()` at startup. Route handlers acquire connections via `async with request.app.state.pool.acquire() as conn`.
+### 3. SQLModel (not raw asyncpg)
+- **Why:** Type safety, auto-generated schemas, lighter than full ORM
+- **How:** Models defined once, used for DB schema + API validation
 
-### Tests mock the DB — no real DB needed
-The test suite mocks `asyncpg.Connection` via `unittest.mock.AsyncMock`. Tests run without a running PostgreSQL instance. The pool is patched by mocking `main.init_db_pool` and `main.close_db_pool` (not `database.*` — the names are imported into `main`).
+### 4. Repository + Service Pattern
+- **Why:** Clean layering; easy to test services with mocked repos
+- **How:** Service layer has business logic; Repository handles SQL; API routes call services
 
-## Dev workflow
+### 5. JWT Authentication (OAuth2 flow)
+- **Why:** Stateless, scalable, integrates with Google/GitHub logins later
+- **How:** `src/auth/auth.py` handles token creation/validation; routes use `Depends(get_current_user)`
 
+### 6. Tests Mock the Database
+- **Why:** Tests run fast without PostgreSQL; simpler CI
+- **How:** Use `unittest.mock` to patch SQLAlchemy sessions in tests
+
+### 7. Environment Variables via Pydantic Settings
+- **Why:** 12-factor app compliance; type-safe config
+- **How:** `src/config.py` reads `.env` on startup; import `settings` everywhere
+
+## Development Workflow
+
+### Local Setup
 ```bash
-# 1. Start the database
-docker compose up -d
+# Start all services
+docker compose -f infrastructure/docker-compose.yml up -d
 
-# 2. Install all deps (including dev)
+# Backend (if developing locally)
+cd backend
 uv pip install -e ".[dev]"
+uvicorn src.main:app --reload
 
-# 3. Populate fixtures
-python seed.py
-# → alice / password123,  bob / password456
-
-# 4. Run the server
-uvicorn main:app --reload
-
-# 5. Run tests (no DB needed)
-python -m pytest tests/ -v
-
-# 6. Lint
-python -m ruff check .
+# Frontend (if developing locally)
+cd frontend
+npm install
+npm run dev
 ```
 
-## Git workflow
+### Running Tests
+```bash
+cd backend
+pytest tests/ -v
+```
 
-- **Never push directly to main** — always open a PR and merge via `gh pr merge`
-- Branch naming: `feat/`, `fix/`, `docs/`, `ci/`
-- Commit messages follow conventional commits style
+### Linting & Formatting
+```bash
+cd backend
+ruff check . && black src/
+```
 
-## CI
+## Git Workflow
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on push/PR to main:
+- **Branch naming:** `feat/`, `fix/`, `docs/`, `ci/`, `reorg/` prefixes
+- **Commit style:** Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`)
+- **PR requirement:** All PRs must pass tests and linting before merge
+- **Main protection:** Never push directly to main — always PR
+
+## CI/CD (GitHub Actions)
+
+Runs on every push/PR to main:
 1. `ruff check .` — lint
-2. `pytest tests/ -v` — test (JWT_SECRET injected as env var, no DB)
+2. `pytest tests/ -v` — unit + integration tests
+3. `next build` — frontend build verification
 
-## Key env vars (.env — not committed)
+## Environment Variables
+
+See `.env.example` for all available vars. Key ones:
 
 ```
-DATABASE_URL = "postgresql://pyvibe:pyvibe@localhost:5432/pyvibe"
-JWT_SECRET   = "dev-jwt-secret-change-in-production"
-JWT_ALGORITHM    = "HS256"
-JWT_EXPIRE_MINUTES = 30
+DATABASE_URL=postgresql+asyncpg://...
+JWT_SECRET=dev-secret-change-in-production
+REDIS_URL=redis://...
+QDRANT_URL=http://...
+OPENAI_API_KEY=...
+DEBUG=true|false
 ```
 
-## API endpoints
+## Important Notes
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| POST | `/auth/token` | — | Issue JWT given username + password |
-| GET | `/users/{user_id}/orders` | Bearer JWT | Paginated order history (10/page) |
-| GET | `/docs` | — | OpenAPI UI |
+### Setup Logging Early
+In `src/main.py`, logging is configured *before* local imports so all downstream modules have the logger set up. This is intentional.
 
-## Status codes
+### No String Interpolation in SQL
+All SQL uses parameterized queries with SQLAlchemy ORM safety. Never concatenate user input into SQL.
 
-| Code | When |
-|---|---|
-| 200 | Success |
-| 401 | Missing/expired/invalid JWT, or wrong credentials |
-| 403 | Token valid but accessing another user's orders |
-| 404 | User not found |
-| 422 | `user_id ≤ 0` or `page < 1` |
-| 503 | Unhandled exception (DB down, etc.) |
+### Async-First
+Backend is fully async. Use `await` with all database, Redis, and HTTP calls.
+
+### Frontend Type Safety
+TypeScript strict mode enforced. No `any` types without // @ts-ignore (document the reason).
+
+## Status & Next Steps
+
+**Currently:** Scaffold phase
+- [x] Directory structure
+- [x] Backend skeleton (FastAPI, config, auth, models, services, repository)
+- [x] Frontend scaffold (Next.js, landing page, dashboard stub)
+- [x] Docker Compose (PostgreSQL, Redis, Qdrant, API, Web services)
+- [ ] Database migrations
+- [ ] Auth API endpoints (login, register, token refresh)
+- [ ] Skill CRUD endpoints
+- [ ] Learning path generator (LLM integration)
+- [ ] Frontend auth pages
+- [ ] Dashboard UI
+- [ ] Test suite
+- [ ] API documentation
+- [ ] Deployment pipeline (Terraform + ArgoCD)
+
+## Debugging & Common Issues
+
+**API won't start?**
+- Check `.env` is set and `DATABASE_URL` is valid
+- Verify PostgreSQL is running: `docker compose -f infrastructure/docker-compose.yml ps`
+
+**Tests failing?**
+- Make sure you've installed dev dependencies: `uv pip install -e ".[dev]"`
+- Check pytest is discovering tests: `pytest tests/ --collect-only`
+
+**Frontend not connecting to API?**
+- Check `NEXT_PUBLIC_API_URL` in `.env`
+- Verify API is running on port 8000
+
+## Related Reading
+
+- [Architecture Blueprint](specs/architecture_blueprint.md) — Full product spec
+- [FastAPI Docs](https://fastapi.tiangolo.com/)
+- [SQLModel Guide](https://sqlmodel.tiangolo.com/)
+- [Next.js Learn](https://nextjs.org/learn)
