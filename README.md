@@ -1,217 +1,153 @@
-# PY-VIBE: Order History API
+# VibeDrive
 
-❗ This repository is a personal exercise of Vibe and Agent Coding. The project does not have any value. It is just a flow state, some LLM magic, and a vision that came together one prompt at a time. The code reflects a moment in time where the logic felt right, the prompts were hitting, and the aesthetic mattered as much as the execution.
-* Logic Style: Intuitive and emergent.
-* Dev Stack: Python + Pure Inspiration.
-* Vibe Check: Passed.
+> AI-powered personal learning planner
 
-## Features
+VibeDrive helps you define skills, track progress, and receive weekly AI-generated study plans with curated resources.
 
-A Python REST API built with **FastAPI** and **asyncpg** that lets authenticated users retrieve their own paginated order history from a PostgreSQL database.
+## 🏗️ Architecture
 
-- **JWT authentication** — issue tokens via `POST /auth/token`
-- **Ownership enforcement** — users can only access their own orders (403 otherwise)
-- **Paginated results** — 10 orders per page, sorted by `created_at DESC`
-- **Async throughout** — asyncpg connection pool, fully non-blocking
-- **Auto docs** — OpenAPI UI at `/docs`, ReDoc at `/redoc`
-
----
-
-## Architecture
-
-```mermaid
-flowchart TD
-    Client(["Client"])
-
-    subgraph API ["API Layer (main.py)"]
-        Token["POST /auth/token"]
-        Orders["GET /users/{user_id}/orders"]
-        EH["Exception Handler\n503 on unhandled errors"]
-    end
-
-    subgraph Auth ["Auth (auth.py)"]
-        AuthUser["authenticate_user()\nfetch user + bcrypt verify"]
-        CreateToken["create_access_token()\nsign JWT"]
-        GetUser["get_current_user()\ndecode + validate JWT"]
-        OwnerGuard["verify_ownership()\ncaller == user_id → 403"]
-    end
-
-    subgraph Svc ["Order Service (services.py)"]
-        GetOrders["get_orders_for_user()\npaginate + 404 guard"]
-    end
-
-    subgraph Repo ["Repository (repository.py)"]
-        FetchByUsername["fetch_user_by_username()"]
-        FetchById["fetch_user_by_id()"]
-        FetchOrders["fetch_orders_by_user_id()\nLIMIT / OFFSET + COUNT OVER()"]
-    end
-
-    subgraph Infra ["Infrastructure"]
-        Pool["asyncpg Connection Pool\n(database.py)\nmin=2 max=10"]
-        Config["Settings\n(config.py)\nDATABASE_URL · JWT_SECRET"]
-        Logger["Structured Logger\n(logger.py)\n→ py-vibe.log"]
-        DB[("PostgreSQL\nusers · orders")]
-    end
-
-    Client -->|"POST credentials"| Token
-    Client -->|"GET + Bearer JWT"| Orders
-
-    Token --> AuthUser
-    AuthUser --> FetchByUsername
-    AuthUser --> CreateToken
-    CreateToken -->|"JWT"| Client
-
-    Orders --> GetUser
-    GetUser -->|"401 invalid token"| Client
-    Orders --> OwnerGuard
-    OwnerGuard -->|"403 wrong user"| Client
-    Orders --> GetOrders
-    GetOrders --> FetchById
-    GetOrders --> FetchOrders
-    GetOrders -->|"PaginatedOrderResponse"| Client
-    GetOrders -->|"404 user not found"| Client
-
-    FetchByUsername --> Pool
-    FetchById --> Pool
-    FetchOrders --> Pool
-    Pool <-->|"asyncpg"| DB
-
-    Config -.->|"DSN"| Pool
-    Config -.->|"JWT_SECRET"| Auth
-    Logger -.->|"log calls"| API
-    Logger -.->|"log calls"| Auth
-    Logger -.->|"log calls"| Svc
-    Logger -.->|"log calls"| Infra
-    EH -.->|"catches all"| API
-```
-
----
-
-## Project Structure
+This is a **monorepo** with module-based separation:
 
 ```
-py-vibe/
-├── main.py              # API Layer — route handlers, app lifecycle
-├── auth.py              # Auth Middleware, Authorization Guard, Token Service helpers
-├── services.py          # Order Service — business logic + pagination
-├── repository.py        # Database Layer — all parameterized SQL queries
-├── database.py          # Connection Pool — asyncpg pool init/teardown
-├── schemas.py           # Pydantic Schemas — request/response models
-├── config.py            # Configuration — env vars via pydantic-settings
-├── logger.py            # Structured logging setup
-├── schema.sql           # PostgreSQL table definitions
-├── seed.py              # Dev fixtures (alice + bob)
-├── docker-compose.yml   # Local PostgreSQL via Docker
-├── pyproject.toml       # Dependencies + tool config
-└── .env.example
+vibedrive/
+├── backend/          # FastAPI REST API (Python)
+├── frontend/         # Next.js web app (React/TypeScript)
+├── infrastructure/   # Docker Compose, Terraform, K8s configs
+├── docs/            # API documentation, architecture notes
+└── specs/           # Project specifications and blueprints
 ```
 
----
+## 🛠️ Tech Stack
 
-## Setup
+| Layer | Technology |
+|---|---|
+| **Backend** | Python, FastAPI, SQLModel, asyncpg |
+| **Frontend** | Next.js, React, TypeScript, TailwindCSS |
+| **Database** | PostgreSQL |
+| **Cache & Jobs** | Redis, Celery |
+| **Vector Search** | Qdrant |
+| **Auth** | JWT + OAuth2 |
+| **AI** | LangChain, OpenAI API |
+| **Observability** | Prometheus, OpenTelemetry |
+| **Deployment** | Docker, Kubernetes, Terraform |
 
-### 1. Start the database
+## 🚀 Quick Start
 
+### Prerequisites
+- Docker & Docker Compose
+- Python 3.11+ (for local development)
+- Node 18+ (for local frontend development)
+
+### Development
+
+1. **Clone and setup**
 ```bash
-docker compose up -d
-```
-
-### 2. Install dependencies
-
-```bash
-uv sync
-```
-
-### 3. Configure environment
-
-```bash
+git clone <repo>
+cd vibedrive
 cp .env.example .env
-# Edit .env with your DATABASE_URL and a strong JWT_SECRET
 ```
 
-### 4. Seed dev data (optional)
+2. **Start all services**
+```bash
+docker compose -f infrastructure/docker-compose.yml up -d
+```
+
+3. **Access the app**
+- Frontend: http://localhost:3000
+- API docs: http://localhost:8000/docs
+- Redis: localhost:6379
+- PostgreSQL: localhost:5432
+
+### Local Backend Development
 
 ```bash
-python seed.py
-# Creates: alice / password123  and  bob / password456
+cd backend
+
+# Install dependencies
+uv pip install -e ".[dev]"
+
+# Run migrations (TODO)
+# python -m alembic upgrade head
+
+# Start API with hot reload
+uvicorn src.main:app --reload --port 8000
+
+# Run tests
+pytest tests/ -v
+
+# Lint and format
+ruff check .
+black src/
 ```
 
-### 5. Run the server
+### Local Frontend Development
 
 ```bash
-uvicorn main:app --reload
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
+
+# Type check
+npm run type-check
+
+# Format code
+npm run format
 ```
 
----
+## 📚 Features (Roadmap)
 
-## API Usage
+- [x] Project scaffold
+- [ ] User authentication (OAuth2 + JWT)
+- [ ] Skill definition & hierarchy
+- [ ] Progress tracking dashboard
+- [ ] Learning path generator (LLM)
+- [ ] Weekly AI study plans
+- [ ] Resource embedding & discovery
+- [ ] Notifications (email, push)
+- [ ] Gamification (XP, badges, streaks)
+- [ ] API documentation
+- [ ] Kubernetes deployment
+- [ ] Monitoring & observability
+- [ ] Mobile-friendly UI
 
-### Obtain a token
+## 📖 Documentation
 
-```bash
-curl -X POST http://localhost:8000/auth/token \
-  -H "Content-Type: application/json" \
-  -d '{"username": "alice", "password": "secret"}'
-```
+- [API Endpoints](docs/api.md) — REST & GraphQL specifications
+- [Architecture](docs/architecture.md) — System design and patterns
+- [Deployment](docs/deployment.md) — Cloud and local deployment guides
+- [Blueprint](specs/architecture_blueprint.md) — Full product specification
 
-**Response:**
-```json
-{
-  "access_token": "eyJ...",
-  "token_type": "bearer"
-}
-```
+## 🔐 Security
 
----
+- JWT authentication with refresh tokens
+- Role-based access control (RBAC)
+- Password hashing (bcrypt)
+- Rate limiting on API endpoints
+- CORS configuration per environment
+- Vault for secrets management (production)
 
-### Fetch order history
+## 📊 Observability
 
-```bash
-curl http://localhost:8000/users/1/orders?page=1 \
-  -H "Authorization: Bearer eyJ..."
-```
+- Prometheus metrics
+- OpenTelemetry traces
+- Structured logging
+- Grafana dashboards (future)
 
-**Response:**
-```json
-{
-  "orders": [
-    {
-      "id": 99,
-      "user_id": 1,
-      "status": "delivered",
-      "total_amount": "49.99",
-      "created_at": "2024-03-15T10:30:00Z",
-      "items": [{"product_id": 7, "name": "Widget", "qty": 1, "unit_price": "49.99"}]
-    }
-  ],
-  "page": 1,
-  "page_size": 10,
-  "total": 1,
-  "total_pages": 1
-}
-```
+## 🤝 Contributing
 
----
+1. Branch naming: `feat/`, `fix/`, `docs/`, `ci/`
+2. All PRs require code review
+3. Tests must pass before merge
+4. Conventional commits style
 
-## HTTP Status Codes
+## 📝 License
 
-| Code | Meaning |
-|------|---------|
-| 200  | Success |
-| 401  | Missing, expired, or invalid JWT |
-| 403  | Authenticated but accessing another user's orders |
-| 404  | User not found |
-| 422  | Invalid `user_id` or `page` parameter |
-| 503  | Database or server error |
+Private project (TBD)
 
----
+## 🙋 Support
 
-## Storing Passwords
-
-To create a bcrypt hash for a user's password (for seeding the DB):
-
-```python
-import bcrypt
-hashed = bcrypt.hashpw(b"secret", bcrypt.gensalt()).decode("utf-8")
-print(hashed)
-```
+See [CLAUDE.md](CLAUDE.md) for project context and developer instructions.
