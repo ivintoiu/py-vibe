@@ -25,6 +25,7 @@ async def init_db_pool(app: FastAPI) -> None:
     """
     Create the asyncpg connection pool and attach it to app.state.pool.
     Called once at application startup.
+    Raises DatabaseInitError if connection fails.
     """
     try:
         app.state.pool = await asyncpg.create_pool(
@@ -33,9 +34,26 @@ async def init_db_pool(app: FastAPI) -> None:
             max_size=10,  # cap at 10 concurrent connections
         )
         logger.info("Database connection pool created (min=2, max=10)")
-    except Exception:
-        logger.exception("Failed to create database connection pool")
-        raise
+    except (asyncpg.PostgresConnectionError, OSError) as e:
+        error_msg = (
+            "Cannot connect to PostgreSQL. "
+            "Is the database running? Check: docker compose up -d"
+        )
+        logger.error(error_msg)
+        raise DatabaseInitError(error_msg) from e
+    except (asyncpg.ClientConfigurationError, ValueError) as e:
+        error_msg = f"Invalid DATABASE_URL in .env: {e}"
+        logger.error(error_msg)
+        raise DatabaseInitError(error_msg) from e
+    except Exception as e:
+        error_msg = f"Database initialization failed: {e}"
+        logger.error(error_msg)
+        raise DatabaseInitError(error_msg) from e
+
+
+class DatabaseInitError(Exception):
+    """Raised when database pool initialization fails."""
+    pass
 
 
 async def close_db_pool(app: FastAPI) -> None:
@@ -43,5 +61,6 @@ async def close_db_pool(app: FastAPI) -> None:
     Gracefully close all connections in the pool.
     Called once at application shutdown.
     """
-    await app.state.pool.close()
-    logger.info("Database connection pool closed")
+    if hasattr(app.state, 'pool') and app.state.pool:
+        await app.state.pool.close()
+        logger.info("Database connection pool closed")

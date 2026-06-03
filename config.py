@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 30
 
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    GITHUB_REDIRECT_URI: str = "http://localhost:8000/auth/github/callback"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 # Module level singleton - import `settings` everywhere instead of

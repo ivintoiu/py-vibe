@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+from unittest.mock import AsyncMock, patch
 
 import bcrypt
 
@@ -107,3 +108,79 @@ def test_get_orders_page_two(client, mock_conn, auth_headers):
     resp = client.get("/users/1/orders?page=2", headers=auth_headers)
     assert resp.status_code == 200
     assert resp.json()["page"] == 2
+
+
+# ---------------------------------------------------------------------------
+# GitHub OAuth — GET /auth/github
+# ---------------------------------------------------------------------------
+
+def test_github_login_redirects_to_github(client):
+    resp = client.get("/auth/github", follow_redirects=False)
+    assert resp.status_code in (301, 302, 307, 308)
+    assert "github.com/login/oauth/authorize" in resp.headers["location"]
+    assert "state=" in resp.headers["location"]
+
+
+# ---------------------------------------------------------------------------
+# GitHub OAuth — GET /auth/github/callback
+# ---------------------------------------------------------------------------
+
+_GH_USER = {"id": 12345, "login": "gh_user", "email": "gh@example.com"}
+_DB_USER = {"id": 99, "email": "gh@example.com"}
+
+
+def test_github_callback_new_user(client, mock_conn):
+    # upsert_user_by_github: github_id miss → email miss → INSERT
+    mock_conn.fetchrow.side_effect = [None, None, _DB_USER]
+    with patch("main.verify_oauth_state", return_value=True), \
+         patch("main.exchange_code_for_token", new_callable=AsyncMock, return_value="gh_token"), \
+         patch("main.fetch_github_user", new_callable=AsyncMock, return_value=_GH_USER):
+        resp = client.get("/auth/github/callback?code=abc&state=valid_state")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "access_token" in body
+    assert body["token_type"] == "bearer"
+
+
+def test_github_callback_existing_user_by_github_id(client, mock_conn):
+    # upsert_user_by_github: github_id hit → return immediately
+    mock_conn.fetchrow.return_value = _DB_USER
+    with patch("main.verify_oauth_state", return_value=True), \
+         patch("main.exchange_code_for_token", new_callable=AsyncMock, return_value="gh_token"), \
+         patch("main.fetch_github_user", new_callable=AsyncMock, return_value=_GH_USER):
+        resp = client.get("/auth/github/callback?code=abc&state=valid_state")
+    assert resp.status_code == 200
+    assert "access_token" in resp.json()
+
+
+def test_github_callback_links_existing_email_user(client, mock_conn):
+    # upsert_user_by_github: github_id miss → email hit (UPDATE links account)
+    mock_conn.fetchrow.side_effect = [None, _DB_USER]
+    with patch("main.verify_oauth_state", return_value=True), \
+         patch("main.exchange_code_for_token", new_callable=AsyncMock, return_value="gh_token"), \
+         patch("main.fetch_github_user", new_callable=AsyncMock, return_value=_GH_USER):
+        resp = client.get("/auth/github/callback?code=abc&state=valid_state")
+    assert resp.status_code == 200
+    assert "access_token" in resp.json()
+
+
+def test_github_callback_invalid_state(client):
+    with patch("main.verify_oauth_state", return_value=False):
+        resp = client.get("/auth/github/callback?code=abc&state=bad_state")
+    assert resp.status_code == 401
+
+
+def test_github_callback_github_exchange_fails(client):
+    with patch("main.verify_oauth_state", return_value=True), \
+         patch("main.exchange_code_for_token", new_callable=AsyncMock, return_value=None):
+        resp = client.get("/auth/github/callback?code=bad&state=valid_state")
+    assert resp.status_code == 401
+
+
+def test_github_callback_no_email(client):
+    no_email_user = {"id": 12345, "login": "gh_user", "email": None}
+    with patch("main.verify_oauth_state", return_value=True), \
+         patch("main.exchange_code_for_token", new_callable=AsyncMock, return_value="gh_token"), \
+         patch("main.fetch_github_user", new_callable=AsyncMock, return_value=no_email_user):
+        resp = client.get("/auth/github/callback?code=abc&state=valid_state")
+    assert resp.status_code == 401
