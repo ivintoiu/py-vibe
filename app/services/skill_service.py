@@ -19,9 +19,7 @@ class SkillService:
         raise NotImplementedError()
 
     @staticmethod
-    async def get_user_skills(
-        user_id: int, skip: int = 0, limit: int = 10
-    ) -> list[Skill]:
+    async def get_user_skills(user_id: int, skip: int = 0, limit: int = 10) -> list[Skill]:
         """Get all skills for a user."""
         # TODO: Implement with repository
         logger.info(f"Fetching skills for user {user_id}")
@@ -35,9 +33,7 @@ class SkillService:
         raise NotImplementedError()
 
     @staticmethod
-    async def update_skill(
-        user_id: int, skill_id: int, skill_update: SkillUpdate
-    ) -> Skill:
+    async def update_skill(user_id: int, skill_id: int, skill_update: SkillUpdate) -> Skill:
         """Update a skill."""
         # TODO: Implement with repository
         logger.info(f"Updating skill {skill_id} for user {user_id}")

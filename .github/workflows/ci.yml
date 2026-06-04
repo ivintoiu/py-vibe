@@ -27,6 +27,15 @@ jobs:
       - name: Run pre-commit hooks
         run: pre-commit run --all-files
 
+      - name: Check if files were modified by pre-commit
+        run: |
+          if ! git diff --exit-code; then
+            echo "❌ Code formatting issues detected. Please run 'pre-commit run --all-files' locally and commit the changes."
+            echo "Files modified:"
+            git diff --name-only
+            exit 1
+          fi
+
       - name: Test
         run: pytest tests/ -v
         env:
