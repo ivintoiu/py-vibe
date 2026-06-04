@@ -1,14 +1,158 @@
 {% extends "base.html" %}
+
 {% block title %}Edit Skill - VibeDrive{% endblock %}
+
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">Edit Skill</h1>
-    <form method="POST" class="bg-white p-8 rounded-lg shadow space-y-6">
-        <input type="text" name="name" value="{{ skill.name }}" required class="w-full px-4 py-2 border border-gray-300 rounded">
-        <textarea name="description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded">{{ skill.description }}</textarea>
-        <input type="number" name="difficulty_level" min="1" max="5" value="{{ skill.difficulty_level }}" class="w-full px-4 py-2 border border-gray-300 rounded">
-        <input type="number" name="estimated_hours" min="0" value="{{ skill.estimated_hours }}" class="w-full px-4 py-2 border border-gray-300 rounded">
-        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded">Update</button>
+<style>
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .form-input, .form-textarea {
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        background-color: white;
+        color: #111827;
+        font-size: 0.875rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+        outline: none;
+        border-color: transparent;
+        box-shadow: 0 0 0 2px #e0edff, 0 0 0 3px #3b82f6;
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 6rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        background-color: #3b82f6;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-primary:hover {
+        background-color: #2563eb;
+    }
+
+    .btn-secondary {
+        border: 1px solid #e5e7eb;
+        background-color: white;
+        color: #374151;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-secondary:hover {
+        background-color: #f9fafb;
+    }
+
+    .form-card {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+</style>
+
+<div style="max-width: 36rem; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 1.875rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">Edit Skill</h1>
+        <p style="color: #6b7280; font-size: 0.875rem;">Update your skill details and learning goals</p>
+    </div>
+
+    <form method="POST" class="form-card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+        <!-- Skill Name -->
+        <div class="form-group">
+            <label for="name" class="form-label">Skill Name *</label>
+            <input type="text" id="name" name="name" value="{{ skill.name }}" required class="form-input">
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <textarea id="description" name="description" class="form-textarea">{{ skill.description or '' }}</textarea>
+        </div>
+
+        <!-- Difficulty & Hours Grid -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="difficulty_level" class="form-label">Difficulty Level</label>
+                <select id="difficulty_level" name="difficulty_level" class="form-input">
+                    <option value="1" {% if skill.difficulty_level == 1 %}selected{% endif %}>Beginner (1/5)</option>
+                    <option value="2" {% if skill.difficulty_level == 2 %}selected{% endif %}>Elementary (2/5)</option>
+                    <option value="3" {% if skill.difficulty_level == 3 %}selected{% endif %}>Intermediate (3/5)</option>
+                    <option value="4" {% if skill.difficulty_level == 4 %}selected{% endif %}>Advanced (4/5)</option>
+                    <option value="5" {% if skill.difficulty_level == 5 %}selected{% endif %}>Expert (5/5)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="estimated_hours" class="form-label">Estimated Hours</label>
+                <input type="number" id="estimated_hours" name="estimated_hours" min="0" value="{{ skill.estimated_hours }}" class="form-input">
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="button-group">
+            <button type="submit" class="btn-primary">Save Changes</button>
+            <a href="{{ url_for('dashboard.view_skill', skill_id=skill.id) }}" class="btn-secondary">Cancel</a>
+        </div>
+
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+</script>
 {% endblock %}

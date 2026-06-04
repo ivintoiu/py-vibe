@@ -1,13 +1,146 @@
 {% extends "base.html" %}
-{% block title %}Skill Detail - VibeDrive{% endblock %}
+
+{% block title %}{{ skill.name }} - VibeDrive{% endblock %}
+
 {% block content %}
-<div class="max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6">{{ skill.name }}</h1>
-    <div class="bg-white p-8 rounded-lg shadow space-y-4">
-        <p><strong>Description:</strong> {{ skill.description }}</p>
-        <p><strong>Difficulty:</strong> Level {{ skill.difficulty_level }}/5</p>
-        <p><strong>Estimated Hours:</strong> {{ skill.estimated_hours }}</p>
-        <p><strong>Status:</strong> {{ skill.status }}</p>
+<style>
+    .skill-detail-card {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+    }
+
+    .detail-value {
+        color: #111827;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-difficulty {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+
+    .badge-hours {
+        background-color: #e0edff;
+        color: #0369a1;
+    }
+
+    .action-button {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .action-primary {
+        background-color: #3b82f6;
+        color: white;
+    }
+
+    .action-primary:hover {
+        background-color: #2563eb;
+    }
+
+    .action-secondary {
+        border: 1px solid #e5e7eb;
+        background-color: white;
+        color: #374151;
+    }
+
+    .action-secondary:hover {
+        background-color: #f9fafb;
+    }
+</style>
+
+<div style="max-width: 36rem; margin: 0 auto;">
+    <!-- Header -->
+    <div style="margin-bottom: 2rem; display: flex; align-items: flex-start; gap: 1rem;">
+        <div style="flex: 1;">
+            <h1 style="font-size: 1.875rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">{{ skill.name }}</h1>
+            <p style="color: #6b7280; font-size: 0.875rem;">Skill Overview</p>
+        </div>
+        <i data-lucide="book-open" style="width: 32px; height: 32px; color: #3b82f6; flex-shrink: 0;"></i>
+    </div>
+
+    <!-- Detail Card -->
+    <div class="skill-detail-card">
+        {% if skill.description %}
+        <div class="detail-row">
+            <span class="detail-label">Description</span>
+        </div>
+        <p style="color: #4b5563; margin-bottom: 1.5rem; line-height: 1.6;">{{ skill.description }}</p>
+        {% endif %}
+
+        <div class="detail-row">
+            <span class="detail-label">Difficulty Level</span>
+            <span class="badge badge-difficulty">Level {{ skill.difficulty_level }}/5</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Estimated Hours</span>
+            <span class="badge badge-hours">{{ skill.estimated_hours }} hours</span>
+        </div>
+
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span style="color: #111827; font-size: 1rem; font-weight: 500; text-transform: capitalize;">{{ skill.status or 'Not started' }}</span>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
+        <a href="{{ url_for('dashboard.edit_skill', skill_id=skill.id) }}" class="action-button action-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
+            Edit Skill
+        </a>
+        <a href="{{ url_for('dashboard.list_skills') }}" class="action-button action-secondary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i>
+            Back to Dashboard
+        </a>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+</script>
 {% endblock %}

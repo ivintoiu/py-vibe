@@ -1,4 +1,4 @@
-# VibeDrive — AI-Powered Personal Learning Planner
+# VibeDrive - AI-Powered Personal Learning Planner
 
 **Flask monolith** for defining skills, tracking milestones, and receiving AI-generated study plans.
 

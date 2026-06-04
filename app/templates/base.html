@@ -13,49 +13,55 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-white text-gray-700">
     <!-- Navigation -->
-    <nav class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/" class="text-2xl font-bold text-indigo-600">VibeDrive</a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    {% if session.get('user_id') %}
-                        <a href="{{ url_for('dashboard.list_skills') }}" class="text-gray-700 hover:text-indigo-600">Dashboard</a>
-                        <a href="{{ url_for('auth.logout') }}" class="text-gray-700 hover:text-indigo-600">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="text-gray-700 hover:text-indigo-600">Login</a>
-                        <a href="{{ url_for('auth.register') }}" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">Register</a>
-                    {% endif %}
-                </div>
+    <nav class="bg-white border-b border-gray-200" style="box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+        <div style="max-width: 80rem; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; height: 4rem;">
+            <!-- Left: Logo -->
+            <div style="display: flex; align-items: center;">
+                <a href="/" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; white-space: nowrap;">
+                    <i data-lucide="book-open" style="width: 24px; height: 24px; color: #3b82f6;"></i>
+                    <span style="font-size: 1.25rem; font-weight: 600; color: #111827;">VibeDrive</span>
+                </a>
+            </div>
+
+            <!-- Right: Navigation -->
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('dashboard.list_skills') }}" style="color: #374151; text-decoration: none; font-weight: 500; font-size: 0.875rem; transition: color 0.15s ease-in-out;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#374151'">Dashboard</a>
+                    <span style="color: #d1d5db;">|</span>
+                    <a href="{{ url_for('auth.logout') }}" style="color: #374151; text-decoration: none; font-weight: 500; font-size: 0.875rem; transition: color 0.15s ease-in-out;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#374151'">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" style="color: #374151; text-decoration: none; font-weight: 500; font-size: 0.875rem; transition: color 0.15s ease-in-out;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#374151'">Login</a>
+                    <span style="color: #d1d5db;">|</span>
+                    <a href="{{ url_for('auth.register') }}" style="background-color: #3b82f6; color: white; text-decoration: none; font-weight: 500; font-size: 0.875rem; border-radius: 0.5rem; padding: 0.625rem 1rem; transition: background-color 0.15s ease-in-out;" onmouseover="this.style.backgroundColor='#2563eb'" onmouseout="this.style.backgroundColor='#3b82f6'">Sign Up</a>
+                {% endif %}
             </div>
         </div>
     </nav>
 
     <!-- Alerts -->
     {% if error %}
-    <div class="bg-red-50 border-l-4 border-red-400 p-4 m-4">
-        <p class="text-red-700">{{ error }}</p>
+    <div style="background-color: #fef2f2; border-left: 3px solid #ef4444; padding: 1rem; margin: 1rem 1rem 0 1rem; border-radius: 0.5rem;">
+        <p style="color: #991b1b; font-size: 0.875rem;">{{ error }}</p>
     </div>
     {% endif %}
 
     {% if message %}
-    <div class="bg-green-50 border-l-4 border-green-400 p-4 m-4">
-        <p class="text-green-700">{{ message }}</p>
+    <div style="background-color: #f0fdf4; border-left: 3px solid #10b981; padding: 1rem; margin: 1rem 1rem 0 1rem; border-radius: 0.5rem;">
+        <p style="color: #166534; font-size: 0.875rem;">{{ message }}</p>
     </div>
     {% endif %}
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white shadow mt-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-gray-600">
-            <p>&copy; 2026 VibeDrive. All rights reserved.</p>
+    <footer class="bg-white border-t border-gray-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+            <p style="color: #9ca3af; font-size: 0.875rem;">&copy; 2026 VibeDrive. All rights reserved.</p>
         </div>
     </footer>
 
