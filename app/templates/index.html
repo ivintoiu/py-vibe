@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Home - VibeDrive{% endblock %}
+
+{% block content %}
+<div class="text-center py-12">
+    <h1 class="text-5xl font-bold text-gray-900 mb-4">Welcome to VibeDrive</h1>
+    <p class="text-xl text-gray-600 mb-8">Your personal AI-powered learning planner</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-2">Define Skills</h3>
+            <p class="text-gray-600">Break down your learning goals into manageable skills</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-2">Track Progress</h3>
+            <p class="text-gray-600">Monitor your milestones and stay motivated</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <h3 class="text-lg font-semibold mb-2">Get Study Plans</h3>
+            <p class="text-gray-600">Receive AI-generated weekly study plans with curated resources</p>
+        </div>
+    </div>
+
+    {% if not session.get('user_id') %}
+    <div class="space-x-4">
+        <a href="{{ url_for('auth.login') }}" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">Login</a>
+        <a href="{{ url_for('auth.register') }}" class="bg-gray-200 text-gray-900 px-6 py-2 rounded hover:bg-gray-300">Register</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+/* VibeDrive Custom Styles */
+
+:root {
+    --indigo-600: #4f46e5;
+    --indigo-700: #4338ca;
+    --gray-50: #f9fafb;
+    --gray-900: #111827;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+main {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Form Styles */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Button Styles */
+button[type="submit"] {
+    transition: all 0.2s ease;
+}
+
+button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+/* Card Hover */
+.bg-white {
+    transition: all 0.2s ease;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .max-w-7xl {
+        padding: 1rem;
+    }
+}

@@ -1,153 +1,128 @@
-# VibeDrive
+# VibeDrive — AI-Powered Personal Learning Planner
 
-> AI-powered personal learning planner
+**Flask monolith** for defining skills, tracking milestones, and receiving AI-generated study plans.
 
-VibeDrive helps you define skills, track progress, and receive weekly AI-generated study plans with curated resources.
+## Quick Start
 
-## 🏗️ Architecture
+### Prerequisites
+- Python 3.12+
+- PostgreSQL 16+
+- Docker & Docker Compose (optional)
 
-This is a **monorepo** with module-based separation:
+### Option 1: Docker Compose
+```bash
+docker compose up -d
+```
+App runs at http://localhost:5000
+
+### Option 2: Local Development
+```bash
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -e ".[dev]"
+cp .env.example .env
+python main.py
+```
+
+Visit http://localhost:5000
+
+## Project Structure
 
 ```
 vibedrive/
-├── backend/          # FastAPI REST API (Python)
-├── frontend/         # Next.js web app (React/TypeScript)
-├── infrastructure/   # Docker Compose, Terraform, K8s configs
-├── docs/            # API documentation, architecture notes
-└── specs/           # Project specifications and blueprints
+├── app/              # Flask application
+├── tests/            # Test suite
+├── migrations/       # Database migrations
+├── infrastructure/   # Docker, Terraform, K8s
+├── docs/             # Documentation
+├── main.py           # Entry point
+├── pyproject.toml    # Dependencies
+└── Makefile          # Convenience commands
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Backend** | Python, FastAPI, SQLModel, asyncpg |
-| **Frontend** | Next.js, React, TypeScript, TailwindCSS |
-| **Database** | PostgreSQL |
-| **Cache & Jobs** | Redis, Celery |
-| **Vector Search** | Qdrant |
-| **Auth** | JWT + OAuth2 |
-| **AI** | LangChain, OpenAI API |
-| **Observability** | Prometheus, OpenTelemetry |
-| **Deployment** | Docker, Kubernetes, Terraform |
+- **Framework:** Flask + Jinja2
+- **Database:** PostgreSQL + SQLAlchemy
+- **Cache:** Redis
+- **Vector DB:** Qdrant
+- **Auth:** JWT (python-jose)
+- **Styling:** TailwindCSS
+- **Testing:** pytest
 
-## 🚀 Quick Start
+## Development
 
-### Prerequisites
-- Docker & Docker Compose
-- Python 3.11+ (for local development)
-- Node 18+ (for local frontend development)
-
-### Development
-
-1. **Clone and setup**
+### Run Tests
 ```bash
-git clone <repo>
-cd vibedrive
-cp .env.example .env
-```
-
-2. **Start all services**
-```bash
-docker compose -f infrastructure/docker-compose.yml up -d
-```
-
-3. **Access the app**
-- Frontend: http://localhost:3000
-- API docs: http://localhost:8000/docs
-- Redis: localhost:6379
-- PostgreSQL: localhost:5432
-
-### Local Backend Development
-
-```bash
-cd backend
-
-# Install dependencies
-uv pip install -e ".[dev]"
-
-# Run migrations (TODO)
-# python -m alembic upgrade head
-
-# Start API with hot reload
-uvicorn src.main:app --reload --port 8000
-
-# Run tests
 pytest tests/ -v
-
-# Lint and format
-ruff check .
-black src/
 ```
 
-### Local Frontend Development
-
+### Lint & Format
 ```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start dev server
-npm run dev
-
-# Type check
-npm run type-check
-
-# Format code
-npm run format
+ruff check .
+black app/ tests/
+mypy app/
 ```
 
-## 📚 Features (Roadmap)
+### Database
+```bash
+# Create migration
+alembic revision --autogenerate -m "message"
 
-- [x] Project scaffold
-- [ ] User authentication (OAuth2 + JWT)
-- [ ] Skill definition & hierarchy
-- [ ] Progress tracking dashboard
-- [ ] Learning path generator (LLM)
-- [ ] Weekly AI study plans
-- [ ] Resource embedding & discovery
-- [ ] Notifications (email, push)
-- [ ] Gamification (XP, badges, streaks)
-- [ ] API documentation
-- [ ] Kubernetes deployment
-- [ ] Monitoring & observability
-- [ ] Mobile-friendly UI
+# Apply migrations
+alembic upgrade head
+```
 
-## 📖 Documentation
+## Multi-Environment Deployment
 
-- [API Endpoints](docs/api.md) — REST & GraphQL specifications
-- [Architecture](docs/architecture.md) — System design and patterns
-- [Deployment](docs/deployment.md) — Cloud and local deployment guides
-- [Blueprint](specs/architecture_blueprint.md) — Full product specification
+- **Local:** `docker-compose.yml` (development mode)
+- **Test:** `docker-compose.test.yml`
+- **UAT:** `docker-compose.uat.yml` + Kustomize
+- **Prod:** Terraform + Kubernetes
 
-## 🔐 Security
+See [docs/environments.md](docs/environments.md) for details.
 
-- JWT authentication with refresh tokens
-- Role-based access control (RBAC)
-- Password hashing (bcrypt)
-- Rate limiting on API endpoints
-- CORS configuration per environment
-- Vault for secrets management (production)
+## Architecture
 
-## 📊 Observability
+See [docs/architecture.md](docs/architecture.md) for system design.
 
-- Prometheus metrics
-- OpenTelemetry traces
-- Structured logging
-- Grafana dashboards (future)
+## API Routes
 
-## 🤝 Contributing
+- `POST /api/auth/token` — Get JWT token
+- `GET /api/skills` — List skills (JSON)
+- `POST /api/skills` — Create skill (JSON)
+- `GET /api/skills/{id}` — Get skill (JSON)
+- `PATCH /api/skills/{id}` — Update skill (JSON)
+- `DELETE /api/skills/{id}` — Delete skill (JSON)
 
-1. Branch naming: `feat/`, `fix/`, `docs/`, `ci/`
-2. All PRs require code review
-3. Tests must pass before merge
-4. Conventional commits style
+## HTML Routes
 
-## 📝 License
+- `GET /` — Home page
+- `GET /login` — Login page
+- `POST /login` — Handle login
+- `GET /register` — Registration page
+- `POST /register` — Handle registration
+- `GET /dashboard` — Skills dashboard
+- `GET /skills/create` — Create skill form
+- `GET /skills/{id}` — Skill detail page
 
-Private project (TBD)
+See [docs/routes.md](docs/routes.md) for full reference.
 
-## 🙋 Support
+## Contributing
 
-See [CLAUDE.md](CLAUDE.md) for project context and developer instructions.
+1. Create branch: `git checkout -b feat/feature-name`
+2. Make changes
+3. Test: `pytest tests/ -v`
+4. Lint: `ruff check . && black app/`
+5. Commit: `git commit -m "feat: description"`
+6. Push & open PR
+
+## License
+
+MIT
+
+## Status
+
+🏗️ **Scaffold phase** — Early development
+
+See [CLAUDE.md](CLAUDE.md) for project context and [docs/](docs/) for detailed guides.

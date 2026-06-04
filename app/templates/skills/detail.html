@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Skill Detail - VibeDrive{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">{{ skill.name }}</h1>
+    <div class="bg-white p-8 rounded-lg shadow space-y-4">
+        <p><strong>Description:</strong> {{ skill.description }}</p>
+        <p><strong>Difficulty:</strong> Level {{ skill.difficulty_level }}/5</p>
+        <p><strong>Estimated Hours:</strong> {{ skill.estimated_hours }}</p>
+        <p><strong>Status:</strong> {{ skill.status }}</p>
+    </div>
+</div>
+{% endblock %}

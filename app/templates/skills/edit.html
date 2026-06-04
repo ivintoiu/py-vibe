@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Edit Skill - VibeDrive{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Edit Skill</h1>
+    <form method="POST" class="bg-white p-8 rounded-lg shadow space-y-6">
+        <input type="text" name="name" value="{{ skill.name }}" required class="w-full px-4 py-2 border border-gray-300 rounded">
+        <textarea name="description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded">{{ skill.description }}</textarea>
+        <input type="number" name="difficulty_level" min="1" max="5" value="{{ skill.difficulty_level }}" class="w-full px-4 py-2 border border-gray-300 rounded">
+        <input type="number" name="estimated_hours" min="0" value="{{ skill.estimated_hours }}" class="w-full px-4 py-2 border border-gray-300 rounded">
+        <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded">Update</button>
+    </form>
+</div>
+{% endblock %}
