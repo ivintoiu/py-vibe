@@ -21,8 +21,11 @@ jobs:
       - name: Install dependencies
         run: uv pip install -e ".[dev]"
 
-      - name: Lint
-        run: ruff check .
+      - name: Validate pre-commit config
+        run: pre-commit validate-config
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
 
       - name: Test
         run: pytest tests/ -v

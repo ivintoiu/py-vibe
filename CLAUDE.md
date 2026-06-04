@@ -151,7 +151,34 @@ pytest tests/ -v
 pytest tests/ -v --cov=app
 ```
 
-### Linting & Formatting
+### Pre-commit Setup (Recommended)
+Pre-commit hooks automatically run linting, formatting, and tests before each commit, preventing bad code from being committed.
+
+**First-time setup:**
+```bash
+make pre-commit-install
+# or manually: pre-commit install
+```
+
+**After this, on every `git commit`:**
+- ruff validates and fixes import ordering
+- black formats code
+- mypy type-checks
+- pytest runs tests
+- trailing-whitespace and debug-statements are caught automatically
+
+**To run pre-commit manually on all files:**
+```bash
+pre-commit run --all-files
+```
+
+**To skip pre-commit (use sparingly):**
+```bash
+git commit --no-verify
+```
+
+### Linting & Formatting (Manual)
+If pre-commit is not installed, run these manually:
 ```bash
 ruff check .
 black app/ tests/
@@ -176,10 +203,9 @@ alembic upgrade head
 
 ## CI/CD (GitHub Actions)
 
-**test.yml** (on every push/PR):
-- Lint: `ruff check .`, `black --check .`
-- Type check: `mypy app/`
-- Tests: `pytest tests/ -v --cov=app`
+**ci.yml** (on every push/PR):
+- Validate pre-commit config: `pre-commit validate-config`
+- Run all pre-commit hooks: `pre-commit run --all-files` (ruff, black, mypy, pytest, debug-statements, trailing-whitespace)
 
 **deploy-test.yml** (on develop branch):
 - Build Docker image

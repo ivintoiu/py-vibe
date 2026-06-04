@@ -1,13 +1,4 @@
-Below is a **deep, end‑to‑end expansion of VibeDrive**, written as a full architectural blueprint you can actually build.  
-It’s structured, technical, cloud‑ready, and designed to help you **learn new things while producing a genuinely useful product**.
-
----
-
 # **VibeDrive — Full Architecture Blueprint**
-
-
-
-
 
 ---
 
