@@ -1,68 +1,111 @@
-/* VibeDrive Custom Styles */
+/* ---------------------------------------------------------
+   Minimalist Premium – Global Aesthetic Layer
+   Works on top of Tailwind
+--------------------------------------------------------- */
 
-:root {
-    --indigo-600: #4f46e5;
-    --indigo-700: #4338ca;
-    --gray-50: #f9fafb;
-    --gray-900: #111827;
-}
-
+/* Typography refinement */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-feature-settings: "liga", "kern";
+    letter-spacing: -0.01em;
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Headings */
+h1, h2, h3, h4 {
+    font-weight: 600;
+    color: #111;
+    letter-spacing: -0.015em;
 }
 
-main {
-    animation: fadeIn 0.3s ease-in-out;
+/* Links */
+a {
+    transition: color 0.2s ease, opacity 0.2s ease;
 }
 
-/* Form Styles */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-textarea,
-select {
-    transition: border-color 0.2s, box-shadow 0.2s;
+a:hover {
+    opacity: 0.85;
 }
 
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus,
-input[type="number"]:focus,
-textarea:focus,
-select:focus {
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+/* ---------------------------------------------------------
+   Form Elements
+   Uses Tailwind classes - don't override
+--------------------------------------------------------- */
+
+/* Placeholder styling */
+::placeholder {
+    color: #a0a0a0;
 }
 
-/* Button Styles */
-button[type="submit"] {
-    transition: all 0.2s ease;
+/* ---------------------------------------------------------
+   Buttons
+   Uses Tailwind classes - don't override
+--------------------------------------------------------- */
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
-button[type="submit"]:active {
-    transform: scale(0.98);
+/* Dark minimalist button */
+.btn-dark {
+    background-color: #111;
+    color: #fff;
 }
 
-/* Card Hover */
-.bg-white {
-    transition: all 0.2s ease;
+.btn-dark:hover {
+    background-color: #000;
 }
 
-/* Responsive */
-@media (max-width: 640px) {
-    .max-w-7xl {
-        padding: 1rem;
-    }
+/* ---------------------------------------------------------
+   Cards / Containers
+--------------------------------------------------------- */
+
+.card {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 2rem;
+}
+
+/* ---------------------------------------------------------
+   Alerts
+--------------------------------------------------------- */
+
+.alert {
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    font-size: 0.95rem;
+}
+
+.alert-error {
+    background: #fef2f2;
+    border-left: 4px solid #dc2626;
+    color: #b91c1c;
+}
+
+.alert-success {
+    background: #f0fdf4;
+    border-left: 4px solid #16a34a;
+    color: #15803d;
+}
+
+/* ---------------------------------------------------------
+   Navigation
+--------------------------------------------------------- */
+
+.nav-link {
+    color: #555;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #111;
+}
+
+/* ---------------------------------------------------------
+   Footer
+--------------------------------------------------------- */
+
+footer {
+    color: #6b6b6b;
+    font-size: 0.9rem;
 }
