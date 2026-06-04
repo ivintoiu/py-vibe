@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile
+    environment:
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql://vibedrive:vibedrive@postgres:5432/vibedrive_test
+      DEBUG: "false"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - test-net
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vibedrive
+      POSTGRES_PASSWORD: vibedrive
+      POSTGRES_DB: vibedrive_test
+    volumes:
+      - test_pgdata:/var/lib/postgresql/data
+    networks:
+      - test-net
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - test-net
+
+volumes:
+  test_pgdata:
+
+networks:
+  test-net:
+    driver: bridge

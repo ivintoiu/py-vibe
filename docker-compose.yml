@@ -1,16 +1,75 @@
+version: "3.8"
+
 services:
-  db:
-    image: postgres:16-alpine
-    container_name: py-vibe-db
+  app:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile
+    container_name: vibedrive-app
+    ports:
+      - "5000:5000"
     environment:
-      POSTGRES_USER: pyvibe
-      POSTGRES_PASSWORD: pyvibe
-      POSTGRES_DB: pyvibe
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql://vibedrive:vibedrive@postgres:5432/vibedrive
+      REDIS_URL: redis://redis:6379/0
+      QDRANT_URL: http://qdrant:6333
+      FLASK_ENV: development
+      DEBUG: "true"
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+    volumes:
+      - .:/app
+    networks:
+      - vibedrive-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: vibedrive-postgres
+    environment:
+      POSTGRES_USER: vibedrive
+      POSTGRES_PASSWORD: vibedrive
+      POSTGRES_DB: vibedrive
     ports:
       - "5432:5432"
     volumes:
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vibedrive"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vibedrive-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: vibedrive-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vibedrive-net
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: vibedrive-qdrant
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - vibedrive-net
 
 volumes:
   pgdata:
+  qdrant_data:
+
+networks:
+  vibedrive-net:
+    driver: bridge

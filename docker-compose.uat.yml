@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile
+    restart: on-failure
+    environment:
+      ENVIRONMENT: uat
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      QDRANT_URL: ${QDRANT_URL}
+      DEBUG: "false"
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - vibedrive-net
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: vibedrive
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: vibedrive
+    volumes:
+      - uat_pgdata:/var/lib/postgresql/data
+    networks:
+      - vibedrive-net
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    networks:
+      - vibedrive-net
+
+volumes:
+  uat_pgdata:
+
+networks:
+  vibedrive-net:
+    driver: bridge

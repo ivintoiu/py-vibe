@@ -2,7 +2,7 @@
 
 ## What this project is
 
-VibeDrive is a full-stack AI-powered personal learning planner. Users define skills, break them into milestones, track progress, and receive weekly AI-generated study plans with curated resources.
+VibeDrive is an AI-powered personal learning planner. Users define skills, break them into milestones, track progress, and receive weekly AI-generated study plans with curated resources. Built as a Python monolith using Flask.
 
 **Status:** Scaffold phase — actively building out the architecture iteratively.
 
@@ -10,117 +10,161 @@ VibeDrive is a full-stack AI-powered personal learning planner. Users define ski
 
 | Layer | Technology |
 |---|---|
-| **Framework** | FastAPI (Python), Next.js (React/TS) |
-| **Database** | PostgreSQL + asyncpg (async) |
+| **Framework** | Flask (Python) with Jinja2 templates |
+| **Database** | PostgreSQL (async via SQLAlchemy) |
 | **Cache/Jobs** | Redis + Celery |
 | **Vector DB** | Qdrant |
-| **Auth** | python-jose + JWT |
+| **Auth** | JWT (python-jose) + bcrypt |
 | **AI** | LangChain + OpenAI API |
-| **Testing** | pytest + pytest-asyncio |
+| **Styling** | TailwindCSS |
+| **Testing** | pytest + pytest-cov |
 | **Linting** | ruff, black, mypy |
-| **Deployment** | Docker, Kubernetes (optional), Terraform |
+| **Deployment** | Docker, Kubernetes, Terraform |
 
 ## Project Structure
 
 ```
 vibedrive/
-├── backend/
-│   ├── src/
-│   │   ├── api/           — API route handlers
-│   │   ├── auth/          — JWT, OAuth2, password hashing
-│   │   ├── models/        — SQLModel ORM definitions
-│   │   ├── services/      — business logic layer
-│   │   ├── repository/    — data access layer
-│   │   ├── db/            — database initialization
-│   │   ├── config.py      — Settings & env vars
-│   │   └── main.py        — FastAPI app entry point
-│   ├── tests/
-│   ├── pyproject.toml
-│   └── Dockerfile
+├── app/                              — Flask application
+│   ├── __init__.py                   — App factory
+│   ├── config/
+│   │   ├── settings.py               — Pydantic BaseSettings
+│   │   └── constants.py
+│   ├── core/
+│   │   ├── exceptions.py
+│   │   ├── security.py               — JWT, password hashing
+│   │   └── dependencies.py
+│   ├── models/                       — SQLAlchemy ORM models
+│   ├── schemas/                      — Pydantic validation schemas
+│   ├── services/                     — Business logic layer
+│   ├── repository/                   — Data access layer
+│   ├── db/                           — Database initialization
+│   ├── routes/
+│   │   ├── api/                      — JSON API endpoints
+│   │   │   ├── auth.py               — /api/auth/*
+│   │   │   └── skills.py             — /api/skills/*
+│   │   └── views/                    — HTML template routes
+│   │       ├── auth.py               — /login, /register
+│   │       └── dashboard.py          — /dashboard, /skills/*
+│   ├── templates/                    — Jinja2 HTML templates
+│   │   ├── base.html
+│   │   ├── index.html
+│   │   ├── dashboard.html
+│   │   ├── auth/
+│   │   └── skills/
+│   ├── static/
+│   │   ├── css/                      — TailwindCSS + custom styles
+│   │   ├── js/
+│   │   └── images/
+│   └── utils/
 │
-├── frontend/
-│   ├── src/
-│   │   ├── pages/         — Next.js pages & routes
-│   │   ├── components/    — React components
-│   │   ├── hooks/         — Custom React hooks
-│   │   ├── utils/         — Helper functions
-│   │   └── styles/        — Global styles
-│   ├── public/            — Static assets
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
+├── tests/                            — Test suite
+│   ├── conftest.py
+│   ├── unit/
+│   ├── integration/
+│   └── fixtures/
+│
+├── migrations/                       — Alembic database migrations
+├── scripts/                          — Utility scripts (seed, init)
 │
 ├── infrastructure/
-│   ├── docker-compose.yml — local dev stack
-│   ├── terraform/         — IaC for cloud deployment
-│   ├── k8s/              — Kubernetes manifests
-│   └── scripts/          — utility scripts
+│   ├── Dockerfile
+│   ├── docker-compose.yml            — Local dev
+│   ├── docker-compose.test.yml       — Test environment
+│   ├── docker-compose.uat.yml        — UAT environment
+│   ├── terraform/                    — IaC for cloud
+│   ├── k8s/                          — Kubernetes manifests
+│   └── scripts/
 │
-├── docs/                  — API, architecture, deployment guides
-├── specs/                 — Product specifications
-├── .env.example
-├── README.md
-└── CLAUDE.md (this file)
+├── docs/                             — Documentation
+│   ├── architecture.md
+│   ├── api.md
+│   ├── deployment.md
+│   ├── setup.md
+│   ├── environments.md
+│   ├── routes.md
+│   └── architecture-decisions/
+│       └── adr-001-flask-consolidation.md
+│
+├── specs/                            — Product specifications
+├── .env.example                      — Environment template
+├── .env.test                         — Test environment config
+├── main.py                           — Application entry point
+├── pyproject.toml
+├── Makefile
+├── docker-compose.yml                — Root orchestration
+└── README.md
 ```
 
 ## Key Design Decisions
 
-### 1. Monorepo with Module Separation
-- **Why:** Easier to manage frontend+backend together, shared types/constants in future
-- **How:** Root `docker-compose.yml` orchestrates all services; each module has its own Dockerfile
+### 1. Flask Monolith (not FastAPI + Next.js)
+- **Why:** Single Python framework, unified config, simpler deployment
+- **How:** Flask serves both HTML templates (Jinja2) and JSON APIs; single Docker image; single deployment pipeline
 
-### 2. FastAPI + SQLModel (not Django ORM)
-- **Why:** Modern async-first framework, lightweight, educational
-- **How:** Raw SQLAlchemy async queries; structured logging; clean separation of layers
+### 2. Separate API and View Routes
+- **Why:** Clean separation of concerns; JSON endpoints distinct from HTML rendering
+- **How:** `app/routes/api/` handles `/api/*` JSON endpoints; `app/routes/views/` handles `/` HTML pages
 
-### 3. SQLModel (not raw asyncpg)
-- **Why:** Type safety, auto-generated schemas, lighter than full ORM
-- **How:** Models defined once, used for DB schema + API validation
+### 3. SQLAlchemy ORM (not raw SQL)
+- **Why:** Type safety, async support, query builder
+- **How:** Models in `app/models/`; async engine with connection pooling; repositories encapsulate queries
 
 ### 4. Repository + Service Pattern
-- **Why:** Clean layering; easy to test services with mocked repos
-- **How:** Service layer has business logic; Repository handles SQL; API routes call services
+- **Why:** Layered architecture; easy to test; dependency injection
+- **How:** Service layer has business logic; Repository handles database access; routes call services
 
-### 5. JWT Authentication (OAuth2 flow)
-- **Why:** Stateless, scalable, integrates with Google/GitHub logins later
-- **How:** `src/auth/auth.py` handles token creation/validation; routes use `Depends(get_current_user)`
+### 5. JWT Authentication with Flask Sessions
+- **Why:** Stateless tokens + persistent cookies for HTML routes
+- **How:** `app/auth/auth.py` handles token creation; API routes validate Bearer tokens; HTML routes use Flask sessions
 
-### 6. Tests Mock the Database
-- **Why:** Tests run fast without PostgreSQL; simpler CI
-- **How:** Use `unittest.mock` to patch SQLAlchemy sessions in tests
+### 6. Multi-Environment Configuration
+- **Why:** Seamless dev/test/uat/prod deployments
+- **How:** Single `.env` template; environment-specific overrides (`.env.test`, `.env.uat`); docker-compose files per environment
 
-### 7. Environment Variables via Pydantic Settings
-- **Why:** 12-factor app compliance; type-safe config
-- **How:** `src/config.py` reads `.env` on startup; import `settings` everywhere
+### 7. Jinja2 Templates + TailwindCSS
+- **Why:** No Node.js dependency; simpler architecture; built-in to Flask
+- **How:** Templates in `app/templates/`; TailwindCSS via CDN; static files serve CSS/JS/images
 
 ## Development Workflow
 
 ### Local Setup
 ```bash
-# Start all services
-docker compose -f infrastructure/docker-compose.yml up -d
+# Option 1: Using Docker Compose
+docker compose up -d
 
-# Backend (if developing locally)
-cd backend
-uv pip install -e ".[dev]"
-uvicorn src.main:app --reload
+# App runs at http://localhost:5000
+# Postgres at localhost:5432
+# Redis at localhost:6379
+# Qdrant at localhost:6333
 
-# Frontend (if developing locally)
-cd frontend
-npm install
-npm run dev
+# Option 2: Local development (Python venv)
+python -m venv venv
+source venv/bin/activate  # or `venv\Scripts\activate` on Windows
+pip install -e ".[dev]"
+python main.py
 ```
 
 ### Running Tests
 ```bash
-cd backend
 pytest tests/ -v
+pytest tests/ -v --cov=app
 ```
 
 ### Linting & Formatting
 ```bash
-cd backend
-ruff check . && black src/
+ruff check .
+black app/ tests/
+mypy app/
+```
+
+### Database Migrations
+```bash
+# Create migration
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
 ```
 
 ## Git Workflow
@@ -132,37 +176,60 @@ ruff check . && black src/
 
 ## CI/CD (GitHub Actions)
 
-Runs on every push/PR to main:
-1. `ruff check .` — lint
-2. `pytest tests/ -v` — unit + integration tests
-3. `next build` — frontend build verification
+**test.yml** (on every push/PR):
+- Lint: `ruff check .`, `black --check .`
+- Type check: `mypy app/`
+- Tests: `pytest tests/ -v --cov=app`
+
+**deploy-test.yml** (on develop branch):
+- Build Docker image
+- Deploy to test environment
+- Run integration tests
+
+**deploy-uat.yml** (on release/* branch):
+- Build Docker image
+- Deploy to UAT with Kustomize
+- Smoke tests
+
+**deploy-prod.yml** (on tag v*.*.* ):
+- Build Docker image
+- Require manual approval
+- Deploy to production with Terraform
 
 ## Environment Variables
 
 See `.env.example` for all available vars. Key ones:
 
 ```
-DATABASE_URL=postgresql+asyncpg://...
-JWT_SECRET=dev-secret-change-in-production
-REDIS_URL=redis://...
-QDRANT_URL=http://...
-OPENAI_API_KEY=...
+ENVIRONMENT=development|test|uat|production
 DEBUG=true|false
+DATABASE_URL=postgresql://user:pass@host:5432/db
+SECRET_KEY=<flask-secret-key>
+JWT_SECRET=<jwt-signing-secret>
+REDIS_URL=redis://host:6379/db
+QDRANT_URL=http://host:6333
+OPENAI_API_KEY=<your-api-key>
 ```
+
+**Environment-specific files:**
+- `.env` — local development (git-ignored)
+- `.env.test` — test environment (in git)
+- `.env.uat` — UAT template (not in git)
+- `.env.prod.example` — production template (not in git)
 
 ## Important Notes
 
-### Setup Logging Early
-In `src/main.py`, logging is configured *before* local imports so all downstream modules have the logger set up. This is intentional.
+### Configuration Loading
+Environment-specific `.env` files are loaded automatically. `app/config/settings.py` will load `.env` first, then `.env.{environment}` to override. Set `ENVIRONMENT=test` to load `.env.test`.
 
-### No String Interpolation in SQL
-All SQL uses parameterized queries with SQLAlchemy ORM safety. Never concatenate user input into SQL.
+### SQL Queries
+All SQL uses SQLAlchemy ORM or parameterized queries. Never concatenate user input into SQL strings.
 
-### Async-First
-Backend is fully async. Use `await` with all database, Redis, and HTTP calls.
+### Session Management
+HTML routes use Flask sessions stored in cookies (server-side storage optional). API routes validate JWT tokens from `Authorization: Bearer <token>` header.
 
-### Frontend Type Safety
-TypeScript strict mode enforced. No `any` types without // @ts-ignore (document the reason).
+### Database Async
+Database queries use SQLAlchemy's async engine. Import `from app.db import get_db` to get a session in services/repositories.
 
 ## Status & Next Steps
 
@@ -183,17 +250,24 @@ TypeScript strict mode enforced. No `any` types without // @ts-ignore (document 
 
 ## Debugging & Common Issues
 
-**API won't start?**
-- Check `.env` is set and `DATABASE_URL` is valid
-- Verify PostgreSQL is running: `docker compose -f infrastructure/docker-compose.yml ps`
+**Flask app won't start?**
+- Check `.env` exists and `DATABASE_URL` is valid
+- Verify PostgreSQL is running: `docker compose ps`
+- Check Flask env: `ENVIRONMENT=development python main.py`
 
 **Tests failing?**
-- Make sure you've installed dev dependencies: `uv pip install -e ".[dev]"`
-- Check pytest is discovering tests: `pytest tests/ --collect-only`
+- Ensure dev dependencies: `pip install -e ".[dev]"`
+- Check pytest discovers tests: `pytest tests/ --collect-only`
+- Run with verbose output: `pytest tests/ -vv`
 
-**Frontend not connecting to API?**
-- Check `NEXT_PUBLIC_API_URL` in `.env`
-- Verify API is running on port 8000
+**Database connection errors?**
+- Verify PostgreSQL container is healthy: `docker compose exec postgres pg_isready`
+- Check `DATABASE_URL` matches container network (use `postgres` not `localhost`)
+
+**Templates not rendering?**
+- Verify `app/templates/` directory exists
+- Check Jinja2 syntax in `.html` files
+- Enable Flask debug mode: `DEBUG=true` in `.env`
 
 ## Related Reading
 

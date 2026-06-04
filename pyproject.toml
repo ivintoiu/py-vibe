@@ -1,36 +1,60 @@
+[build-system]
+requires = ["setuptools>=68", "setuptools-scm>=7"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "py-vibe"
+name = "vibedrive"
 version = "0.1.0"
+description = "VibeDrive — AI-powered personal learning planner (Flask monolith)"
+authors = [{name = "VibeDrive Team"}]
 requires-python = ">=3.12"
 dependencies = [
-    "asyncpg>=0.31.0",
-    "bcrypt>=5.0.0",
-    "fastapi>=0.135.3",
-    "httpx>=0.27",
-    "pydantic>=2.12.5",
-    "pydantic-settings>=2.13.1",
-    "python-dotenv>=1.2.2",
-    "python-jose[cryptography]>=3.5.0",
-    "uvicorn[standard]>=0.44.0",
+    "flask>=3.0.0",
+    "sqlalchemy>=2.0.0",
+    "sqlmodel>=0.0.14",
+    "python-jose[cryptography]>=3.3.0",
+    "bcrypt>=4.1.1",
+    "pydantic-settings>=2.1.0",
+    "langchain>=0.1.0",
+    "langchain-openai>=0.0.1",
+    "qdrant-client>=1.18.0",
+    "redis>=5.0.0",
+    "celery>=5.3.0",
+    "opentelemetry-api>=1.21.0",
+    "opentelemetry-sdk>=1.21.0",
+    "opentelemetry-exporter-prometheus>=0.42b0",
+    "prometheus-client>=0.19.0",
+    "httpx>=0.25.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
-    "pytest-asyncio>=0.24",
-    "pytest-mock>=3.14",
-    "ruff>=0.9",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "black>=23.12.0",
+    "mypy>=1.7.0",
+    "flask-testing>=0.8.1",
 ]
 
 [tool.setuptools]
-py-modules = ["main", "auth", "services", "repository", "database", "schemas", "config", "logger"]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
+packages = ["app", "tests"]
 
 [tool.ruff]
+line-length = 100
 target-version = "py312"
+select = ["E", "F", "W", "I"]
 
-[tool.ruff.lint]
-select = ["E", "F", "W"]
-ignore = ["E501"]
+[tool.ruff.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=app --cov-report=term-missing"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

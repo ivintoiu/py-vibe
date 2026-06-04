@@ -1,0 +1,1 @@
+"""HTML view routes module."""
