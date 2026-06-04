@@ -84,9 +84,7 @@ def register():
 
     if len(password) < 8:
         return (
-            render_template(
-                "auth/register.html", error="Password must be at least 8 characters"
-            ),
+            render_template("auth/register.html", error="Password must be at least 8 characters"),
             400,
         )
 

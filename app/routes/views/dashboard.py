@@ -106,9 +106,7 @@ def edit_skill(skill_id):
 
     if not name:
         return (
-            render_template(
-                "skills/edit.html", skill=skill, error="Skill name required"
-            ),
+            render_template("skills/edit.html", skill=skill, error="Skill name required"),
             400,
         )
 

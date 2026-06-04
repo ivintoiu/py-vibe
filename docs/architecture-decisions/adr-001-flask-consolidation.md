@@ -1,8 +1,8 @@
 # ADR-001: Consolidate to Flask Monolith (Remove Next.js)
 
-**Status:** Accepted  
-**Date:** 2024-06-04  
-**Context:** Flask consolidation decision  
+**Status:** Accepted
+**Date:** 2024-06-04
+**Context:** Flask consolidation decision
 **Decision Maker:** Team
 
 ## Context

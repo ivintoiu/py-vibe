@@ -1,29 +1,33 @@
-.PHONY: help install dev test lint format clean docker-up docker-down db-migrate seed
+.PHONY: help install dev test lint format clean docker-up docker-down db-migrate seed pre-commit-install
 
 help:
 	@echo "VibeDrive - Flask Monolith"
 	@echo "Usage: make <target>"
 	@echo ""
 	@echo "Development:"
-	@echo "  make install       Install dependencies"
-	@echo "  make dev           Run Flask dev server"
-	@echo "  make test          Run test suite"
-	@echo "  make lint          Run linting checks"
-	@echo "  make format        Format code with black"
+	@echo "  make install           Install dependencies"
+	@echo "  make pre-commit-install Install pre-commit hooks"
+	@echo "  make dev               Run Flask dev server"
+	@echo "  make test              Run test suite"
+	@echo "  make lint              Run linting checks"
+	@echo "  make format            Format code with black"
 	@echo ""
 	@echo "Docker:"
-	@echo "  make docker-up     Start Docker services (dev)"
-	@echo "  make docker-down   Stop Docker services"
+	@echo "  make docker-up         Start Docker services (dev)"
+	@echo "  make docker-down       Stop Docker services"
 	@echo ""
 	@echo "Database:"
-	@echo "  make db-migrate    Apply migrations"
-	@echo "  make seed          Seed database with test data"
+	@echo "  make db-migrate        Apply migrations"
+	@echo "  make seed              Seed database with test data"
 	@echo ""
 	@echo "Cleanup:"
-	@echo "  make clean         Remove caches and builds"
+	@echo "  make clean             Remove caches and builds"
 
 install:
 	pip install -e ".[dev]"
+
+pre-commit-install:
+	pre-commit install
 
 dev:
 	ENVIRONMENT=development python main.py
