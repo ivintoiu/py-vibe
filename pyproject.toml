@@ -51,7 +51,6 @@ known-first-party = ["app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=app --cov-report=term-missing"
 
 [tool.mypy]
 python_version = "3.12"

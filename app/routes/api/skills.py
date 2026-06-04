@@ -3,7 +3,7 @@
 import logging
 from functools import wraps
 
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, g, jsonify, request
 
 from app.auth.auth import get_current_user_from_token
 
@@ -14,6 +14,7 @@ bp = Blueprint("api_skills", __name__)
 
 def require_api_auth(f):
     """Require JWT authentication for API routes."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")
@@ -27,6 +28,7 @@ def require_api_auth(f):
 
         g.user_id = user_id
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -34,9 +36,9 @@ def require_api_auth(f):
 @require_api_auth
 def list_skills():
     """GET /api/skills - List user's skills."""
-    skip = request.args.get("skip", 0, type=int)
-    limit = request.args.get("limit", 10, type=int)
-    user_id = g.user_id
+    _skip = request.args.get("skip", 0, type=int)
+    _limit = request.args.get("limit", 10, type=int)
+    _user_id = g.user_id
     # TODO: Implement with skill service
     return jsonify([]), 200
 
@@ -45,8 +47,8 @@ def list_skills():
 @require_api_auth
 def create_skill():
     """POST /api/skills - Create a new skill."""
-    user_id = g.user_id
-    data = request.get_json()
+    _user_id = g.user_id
+    _data = request.get_json()
     # TODO: Implement with skill service
     return jsonify({"error": "Not implemented"}), 501
 
@@ -55,7 +57,7 @@ def create_skill():
 @require_api_auth
 def get_skill(skill_id):
     """GET /api/skills/{id} - Get a specific skill."""
-    user_id = g.user_id
+    _user_id = g.user_id
     # TODO: Implement with skill service
     return jsonify({"error": "Not implemented"}), 501
 
@@ -64,8 +66,8 @@ def get_skill(skill_id):
 @require_api_auth
 def update_skill(skill_id):
     """PATCH /api/skills/{id} - Update a skill."""
-    user_id = g.user_id
-    data = request.get_json()
+    _user_id = g.user_id
+    _data = request.get_json()
     # TODO: Implement with skill service
     return jsonify({"error": "Not implemented"}), 501
 
@@ -74,6 +76,6 @@ def update_skill(skill_id):
 @require_api_auth
 def delete_skill(skill_id):
     """DELETE /api/skills/{id} - Delete a skill."""
-    user_id = g.user_id
+    _user_id = g.user_id
     # TODO: Implement with skill service
     return "", 204

@@ -1,21 +1,24 @@
 """Pytest configuration and fixtures."""
 
 import pytest
-from httpx import AsyncClient
 
-from src.main import create_app
-
-
-@pytest.fixture
-async def async_client():
-    """Create test client with mock database."""
-    app = create_app()
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        yield client
+from app import create_app
 
 
 @pytest.fixture
-async def test_session():
-    """Create test database session."""
-    # TODO: Set up in-memory SQLite or test PostgreSQL
-    raise NotImplementedError()
+def client():
+    """Create Flask test client."""
+    app = create_app(env="test")
+    app.config["TESTING"] = True
+
+    with app.test_client() as client:
+        with app.app_context():
+            yield client
+
+
+@pytest.fixture
+def app():
+    """Create Flask application for testing."""
+    app = create_app(env="test")
+    app.config["TESTING"] = True
+    return app

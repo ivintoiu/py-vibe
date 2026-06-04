@@ -6,7 +6,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from src.models import Skill, SkillCreate, SkillUpdate
+from app.models import Skill, SkillCreate, SkillUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,9 @@ class SkillRepository:
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
-    async def get_all_for_user(self, user_id: int, skip: int = 0, limit: int = 10) -> list[Skill]:
+    async def get_all_for_user(
+        self, user_id: int, skip: int = 0, limit: int = 10
+    ) -> list[Skill]:
         """Get all skills for a user with pagination."""
         stmt = (
             select(Skill)

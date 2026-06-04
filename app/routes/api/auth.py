@@ -2,7 +2,7 @@
 
 import logging
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 
 from app.auth.auth import create_access_token
 

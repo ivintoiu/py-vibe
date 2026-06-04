@@ -3,7 +3,7 @@
 import logging
 from functools import wraps
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, g
+from flask import Blueprint, g, redirect, render_template, request, session, url_for
 
 from app.auth.auth import get_current_user_from_token
 
@@ -14,6 +14,7 @@ bp = Blueprint("dashboard", __name__)
 
 def login_required(f):
     """Require user to be logged in."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         token = session.get("access_token")
@@ -27,6 +28,7 @@ def login_required(f):
 
         g.user_id = user_id
         return f(*args, **kwargs)
+
     return decorated_function
 
 
@@ -34,7 +36,7 @@ def login_required(f):
 @login_required
 def list_skills():
     """GET /dashboard - Show user's skills dashboard."""
-    user_id = g.user_id
+    _user_id = g.user_id
     # TODO: Fetch skills from database
     skills = []
     return render_template("dashboard.html", skills=skills)
@@ -44,7 +46,7 @@ def list_skills():
 @login_required
 def view_skills():
     """GET /skills - List all user's skills."""
-    user_id = g.user_id
+    _user_id = g.user_id
     # TODO: Fetch skills from database
     skills = []
     return render_template("skills/list.html", skills=skills)
@@ -58,11 +60,11 @@ def create_skill():
         return render_template("skills/create.html")
 
     # POST: Handle skill creation
-    user_id = g.user_id
+    _user_id = g.user_id
     name = request.form.get("name")
-    description = request.form.get("description")
-    difficulty_level = request.form.get("difficulty_level", 1, type=int)
-    estimated_hours = request.form.get("estimated_hours", 0, type=int)
+    _description = request.form.get("description")
+    _difficulty_level = request.form.get("difficulty_level", 1, type=int)
+    _estimated_hours = request.form.get("estimated_hours", 0, type=int)
 
     if not name:
         return render_template("skills/create.html", error="Skill name required"), 400
@@ -75,7 +77,7 @@ def create_skill():
 @login_required
 def view_skill(skill_id):
     """GET /skills/{id} - View skill details."""
-    user_id = g.user_id
+    _user_id = g.user_id
     # TODO: Fetch skill from database
     skill = None
     if not skill:
@@ -87,7 +89,7 @@ def view_skill(skill_id):
 @login_required
 def edit_skill(skill_id):
     """GET /skills/{id}/edit - Show edit form, POST - Update skill."""
-    user_id = g.user_id
+    _user_id = g.user_id
     # TODO: Fetch skill from database
     skill = None
     if not skill:
@@ -98,12 +100,17 @@ def edit_skill(skill_id):
 
     # POST: Handle skill update
     name = request.form.get("name")
-    description = request.form.get("description")
-    difficulty_level = request.form.get("difficulty_level", type=int)
-    estimated_hours = request.form.get("estimated_hours", type=int)
+    _description = request.form.get("description")
+    _difficulty_level = request.form.get("difficulty_level", type=int)
+    _estimated_hours = request.form.get("estimated_hours", type=int)
 
     if not name:
-        return render_template("skills/edit.html", skill=skill, error="Skill name required"), 400
+        return (
+            render_template(
+                "skills/edit.html", skill=skill, error="Skill name required"
+            ),
+            400,
+        )
 
     # TODO: Update skill in database
     return redirect(url_for("dashboard.view_skill", skill_id=skill_id))
@@ -113,6 +120,6 @@ def edit_skill(skill_id):
 @login_required
 def delete_skill(skill_id):
     """POST /skills/{id}/delete - Delete skill."""
-    user_id = g.user_id
+    _user_id = g.user_id
     # TODO: Delete skill from database
     return redirect(url_for("dashboard.list_skills"))
