@@ -3,30 +3,102 @@
 {% block title %}Home - VibeDrive{% endblock %}
 
 {% block content %}
-<div class="text-center py-12">
-    <h1 class="text-5xl font-bold text-gray-900 mb-4">Welcome to VibeDrive</h1>
-    <p class="text-xl text-gray-600 mb-8">Your personal AI-powered learning planner</p>
+<style>
+    .feature-card {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.15s ease-in-out, border-color 0.15s ease-in-out;
+    }
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-lg font-semibold mb-2">Define Skills</h3>
-            <p class="text-gray-600">Break down your learning goals into manageable skills</p>
+    .feature-card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        border-color: #bfdbfe;
+    }
+
+    .feature-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        color: #3b82f6;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<div style="text-align: center; padding: 3rem 1rem;">
+    <!-- Hero Section -->
+    <h1 style="font-size: 2.25rem; font-weight: 600; color: #111827; margin-bottom: 1rem; line-height: 1.3;">
+        Your AI-Powered Learning Journey
+    </h1>
+    <p style="font-size: 1.125rem; color: #6b7280; margin-bottom: 3rem; max-width: 32rem; margin-left: auto; margin-right: auto;">
+        Break down your learning goals, track your progress, and get AI-generated study plans tailored just for you.
+    </p>
+
+    <!-- Feature Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+        <!-- Define Skills -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i data-lucide="graduation-cap"></i>
+            </div>
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">Define Skills</h3>
+            <p style="color: #6b7280; font-size: 0.9375rem; line-height: 1.5;">Break down your learning goals into manageable, achievable skills.</p>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-lg font-semibold mb-2">Track Progress</h3>
-            <p class="text-gray-600">Monitor your milestones and stay motivated</p>
+
+        <!-- Track Progress -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i data-lucide="trending-up"></i>
+            </div>
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">Track Progress</h3>
+            <p style="color: #6b7280; font-size: 0.9375rem; line-height: 1.5;">Monitor your milestones and stay motivated with visual progress indicators.</p>
         </div>
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h3 class="text-lg font-semibold mb-2">Get Study Plans</h3>
-            <p class="text-gray-600">Receive AI-generated weekly study plans with curated resources</p>
+
+        <!-- Get Study Plans -->
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i data-lucide="sparkles"></i>
+            </div>
+            <h3 style="font-size: 1.125rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">AI Study Plans</h3>
+            <p style="color: #6b7280; font-size: 0.9375rem; line-height: 1.5;">Receive weekly AI-generated study plans with curated resources and actionable steps.</p>
         </div>
     </div>
 
+    <!-- CTA Buttons -->
     {% if not session.get('user_id') %}
-    <div class="space-x-4">
-        <a href="{{ url_for('auth.login') }}" class="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700">Login</a>
-        <a href="{{ url_for('auth.register') }}" class="bg-gray-200 text-gray-900 px-6 py-2 rounded hover:bg-gray-300">Register</a>
+    <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <a href="{{ url_for('auth.login') }}"
+           style="background-color: #3b82f6; color: white; padding: 0.625rem 1.5rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; text-decoration: none; transition: background-color 0.15s ease-in-out; display: inline-block;"
+           onmouseover="this.style.backgroundColor='#2563eb';"
+           onmouseout="this.style.backgroundColor='#3b82f6';">
+            Login to Start
+        </a>
+        <a href="{{ url_for('auth.register') }}"
+           style="border: 1px solid #e5e7eb; background-color: white; color: #374151; padding: 0.625rem 1.5rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; text-decoration: none; transition: background-color 0.15s ease-in-out; display: inline-block;"
+           onmouseover="this.style.backgroundColor='#f9fafb';"
+           onmouseout="this.style.backgroundColor='white';">
+            Create Account
+        </a>
     </div>
+    {% else %}
+    <a href="{{ url_for('dashboard.list_skills') }}"
+       style="background-color: #3b82f6; color: white; padding: 0.625rem 1.5rem; border-radius: 0.5rem; font-weight: 500; font-size: 0.875rem; text-decoration: none; transition: background-color 0.15s ease-in-out; display: inline-block;"
+       onmouseover="this.style.backgroundColor='#2563eb';"
+       onmouseout="this.style.backgroundColor='#3b82f6';">
+        Go to Dashboard
+    </a>
     {% endif %}
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    });
+</script>
 {% endblock %}
