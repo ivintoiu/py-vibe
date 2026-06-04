@@ -1,13 +1,19 @@
 """Application configuration using Pydantic Settings."""
 
-import os
 from typing import Literal
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application configuration from environment variables."""
+
+    model_config = ConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
 
     # Environment
     environment: Literal["development", "test", "uat", "production"] = "development"
@@ -41,33 +47,6 @@ class Settings(BaseSettings):
     # App
     app_name: str = "VibeDrive"
     app_version: str = "0.1.0"
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-
-        @classmethod
-        def settings_customise_sources(
-            cls,
-            settings_cls,
-            init_settings,
-            env_settings,
-            dotenv_settings,
-            file_settings,
-        ):
-            """Load .env files with environment-specific overrides."""
-            # First try environment-specific .env file
-            env = os.getenv("ENVIRONMENT", "development")
-            env_file = f".env.{env}"
-
-            # Use environment-specific .env if it exists, otherwise use .env
-            if os.path.exists(env_file):
-                dotenv_settings = cls(env_file=env_file)
-            else:
-                dotenv_settings = cls(env_file=".env")
-
-            return (init_settings, dotenv_settings, env_settings)
 
 
 settings = Settings()
