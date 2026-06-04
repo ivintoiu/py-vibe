@@ -235,8 +235,8 @@ Database queries use SQLAlchemy's async engine. Import `from app.db import get_d
 
 **Currently:** Scaffold phase
 - [x] Directory structure
-- [x] Backend skeleton (FastAPI, config, auth, models, services, repository)
-- [x] Frontend scaffold (Next.js, landing page, dashboard stub)
+- [x] Flask monolith scaffold (config, auth, models...)
+- [x] Frontend scaffold (Jinja2, landing page, dashboard stub)
 - [x] Docker Compose (PostgreSQL, Redis, Qdrant, API, Web services)
 - [ ] Database migrations
 - [ ] Auth API endpoints (login, register, token refresh)
