@@ -45,11 +45,7 @@ format:
 	ruff check . --fix
 
 clean:
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	find . -type d -name .pytest_cache -exec rm -rf {} +
-	find . -type d -name .ruff_cache -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-	rm -rf htmlcov/ .coverage
+	python shared/clean.py
 
 docker-up:
 	docker compose up -d
