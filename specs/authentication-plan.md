@@ -281,7 +281,7 @@ def get_token():
         refresh_token,
         max_age=604800,  # 7 days in seconds
         httponly=True,
-        secure=settings.environment == "production",  # HTTPS only in prod
+        secure=settings.app_env == "production",  # HTTPS only in prod
         samesite="Strict"
     )
 
@@ -925,7 +925,7 @@ def register():
             refresh_token,
             max_age=604800,
             httponly=True,
-            secure=settings.environment == "production",
+            secure=settings.app_env == "production",
             samesite="Strict"
         )
 

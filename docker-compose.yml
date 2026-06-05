@@ -9,7 +9,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      ENVIRONMENT: development
+      APP_ENV: development
       DATABASE_URL: postgresql://vibedrive:vibedrive@postgres:5432/vibedrive
       REDIS_URL: redis://redis:6379/0
       QDRANT_URL: http://qdrant:6333

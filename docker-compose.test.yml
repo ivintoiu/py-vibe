@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: infrastructure/Dockerfile
     environment:
-      ENVIRONMENT: test
+      APP_ENV: test
       DATABASE_URL: postgresql://vibedrive:vibedrive@postgres:5432/vibedrive_test
       DEBUG: "false"
     depends_on:

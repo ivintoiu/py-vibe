@@ -19,9 +19,7 @@ App runs at http://localhost:5000
 
 ### Option 2: Local Development
 ```bash
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -e ".[dev]"
+uv sync --extra dev --no-install-project
 cp .env.example .env
 python main.py
 ```

@@ -16,7 +16,7 @@ def create_app(env: str = "development") -> Flask:
 
     # Configuration
     app.config.update(
-        ENVIRONMENT=env,
+        APP_ENV=env,
         DEBUG=settings.debug,
         SECRET_KEY=settings.secret_key,
         JSON_SORT_KEYS=False,

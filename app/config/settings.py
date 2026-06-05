@@ -1,23 +1,36 @@
 """Application configuration using Pydantic Settings."""
 
+import os
 from typing import Literal
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_validator
 from pydantic_settings import BaseSettings
+
+_env = os.getenv("APP_ENV", "development")
 
 
 class Settings(BaseSettings):
     """Application configuration from environment variables."""
 
     model_config = ConfigDict(
-        env_file=".env",
+        env_file=(".env", f".env.{_env}"),
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # Environment
-    environment: Literal["development", "test", "uat", "production"] = "development"
+    app_env: Literal["development", "test", "uat", "production"] = "development"
     debug: bool = False
+
+    @model_validator(mode="after")
+    def validate_secrets(self) -> "Settings":
+        if self.app_env == "production":
+            if self.secret_key == "dev-secret-change-in-production":
+                raise ValueError("SECRET_KEY must be set in production")
+            if self.jwt_secret == "dev-secret-change-in-production":
+                raise ValueError("JWT_SECRET must be set in production")
+        return self
 
     # Database
     database_url: str = "postgresql://vibedrive:vibedrive@localhost:5432/vibedrive"
