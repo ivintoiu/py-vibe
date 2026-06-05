@@ -20,7 +20,7 @@ def create_app(env: str = "development") -> Flask:
         DEBUG=settings.debug,
         SECRET_KEY=settings.secret_key,
         JSON_SORT_KEYS=False,
-        SESSION_COOKIE_SECURE=env == "production",
+        SESSION_COOKIE_SECURE=settings.app_env == "production",
         SESSION_COOKIE_HTTPONLY=True,
         PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes
     )

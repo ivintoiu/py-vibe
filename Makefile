@@ -29,8 +29,7 @@ help:
 	@echo "  make clean             Remove caches and builds"
 
 smoke:
-#    Smoke test all dev tools
-   pytest --version && ruff --version && black --version && mypy --version && python -c "import flask_testing; print('flask-testing OK')"
+	pytest --version && ruff --version && black --version && mypy --version && python -c "import flask_testing; print('flask-testing OK')"
 
 all:
 	@echo "🚀 Running full development setup..."

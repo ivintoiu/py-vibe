@@ -26,9 +26,9 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_secrets(self) -> "Settings":
         if self.app_env == "production":
-            if self.secret_key == "dev-secret-change-in-production":
+            if not self.secret_key or self.secret_key == "dev-secret-change-in-production":
                 raise ValueError("SECRET_KEY must be set in production")
-            if self.jwt_secret == "dev-secret-change-in-production":
+            if not self.jwt_secret or self.jwt_secret == "dev-secret-change-in-production":
                 raise ValueError("JWT_SECRET must be set in production")
         return self
 
