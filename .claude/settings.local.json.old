@@ -1,0 +1,14 @@
+// {
+//   "model": "opus",
+//   "permissions": {
+//     "bash": "allow",
+//     "read": "allow",
+//     "edit": "allow",
+//     "write": "allow",
+//     "glob": "allow",
+//     "grep": "allow"
+//   },
+//   "hooks": {
+//     "codebase_loaded": "echo '📚 VibeDrive project loaded. This is a Flask monolith with Jinja2 templates. See CLAUDE.md for context.'"
+//   }
+// }

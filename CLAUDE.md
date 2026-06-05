@@ -11,7 +11,7 @@ VibeDrive is an AI-powered personal learning planner. Users define skills, break
 | Layer | Technology |
 |---|---|
 | **Framework** | Flask (Python) with Jinja2 templates |
-| **Database** | PostgreSQL (async via SQLAlchemy) |
+| **Database** | PostgreSQL (psycopg2 DBAPI + ThreadedConnectionPool) |
 | **Cache/Jobs** | Redis + Celery |
 | **Vector DB** | Qdrant |
 | **Auth** | JWT (python-jose) + bcrypt |
@@ -34,11 +34,10 @@ vibedrive/
 │   │   ├── exceptions.py
 │   │   ├── security.py               — JWT, password hashing
 │   │   └── dependencies.py
-│   ├── models/                       — SQLAlchemy ORM models
-│   ├── schemas/                      — Pydantic validation schemas
+│   ├── models/                       — Pydantic schemas + dataclasses
 │   ├── services/                     — Business logic layer
-│   ├── repository/                   — Data access layer
-│   ├── db/                           — Database initialization
+│   ├── repository/                   — Data access layer (psycopg2 DBAPI)
+│   ├── db/                           — Connection pool (ThreadedConnectionPool)
 │   ├── routes/
 │   │   ├── api/                      — JSON API endpoints
 │   │   │   ├── auth.py               — /api/auth/*
@@ -106,9 +105,9 @@ vibedrive/
 - **Why:** Clean separation of concerns; JSON endpoints distinct from HTML rendering
 - **How:** `app/routes/api/` handles `/api/*` JSON endpoints; `app/routes/views/` handles `/` HTML pages
 
-### 3. SQLAlchemy ORM (not raw SQL)
-- **Why:** Type safety, async support, query builder
-- **How:** Models in `app/models/`; async engine with connection pooling; repositories encapsulate queries
+### 3. Raw DBAPI (psycopg2) instead of ORM
+- **Why:** Explicit control, no ORM overhead, simpler for synchronous Flask workloads, all SQL visible and auditable
+- **How:** `ThreadedConnectionPool` for connection management; raw parameterized SQL in `app/repository/`; RealDictCursor for named column access; explicit connection acquisition via `get_db()`
 
 ### 4. Repository + Service Pattern
 - **Why:** Layered architecture; easy to test; dependency injection
@@ -185,21 +184,24 @@ black app/ tests/
 mypy app/
 ```
 
-### Database Migrations
+### Database Schema
+Schema is defined in raw SQL (no ORM migrations):
 ```bash
-# Create migration
-alembic revision --autogenerate -m "description"
+# Apply schema to local database
+psql postgresql://vibedrive:vibedrive@localhost:5432/vibedrive -f scripts/schema.sql
 
-# Apply migrations
-alembic upgrade head
+# Apply seed data
+psql postgresql://vibedrive:vibedrive@localhost:5432/vibedrive -f scripts/seed.sql
 ```
+
+For production deployments, use standard database migration tools (Alembic, Flyway) to manage schema versions.
 
 ## Git Workflow
 
 - **Branch naming:** `feat/`, `fix/`, `docs/`, `ci/`, `reorg/` prefixes
 - **Commit style:** Conventional commits (`feat:`, `fix:`, `docs:`, `chore:`)
 - **PR requirement:** All PRs must pass tests and linting before merge
-- **Main protection:** Never push directly to main — always PR
+- **Main protection:** Never push directly to main - always PR
 
 ## CI/CD (GitHub Actions)
 
@@ -249,29 +251,32 @@ OPENAI_API_KEY=<your-api-key>
 Environment-specific `.env` files are loaded automatically. `app/config/settings.py` will load `.env` first, then `.env.{environment}` to override. Set `ENVIRONMENT=test` to load `.env.test`.
 
 ### SQL Queries
-All SQL uses SQLAlchemy ORM or parameterized queries. Never concatenate user input into SQL strings.
+All SQL uses parameterized queries via psycopg2. Never concatenate user input into SQL strings. Queries are raw SQL in repositories (e.g., `app/repository/skill_repository.py`) for maximum visibility.
 
-### Session Management
-HTML routes use Flask sessions stored in cookies (server-side storage optional). API routes validate JWT tokens from `Authorization: Bearer <token>` header.
+### Connection Management
+Connections are acquired from `ThreadedConnectionPool` via `get_db()` which is automatically wired to Flask's request context. Import `from app.db import get_db` in services or repositories to get a connection. Connections are automatically returned to the pool at request end via `teardown_db()`.
 
-### Database Async
-Database queries use SQLAlchemy's async engine. Import `from app.db import get_db` to get a session in services/repositories.
+### Models & Schemas
+- **Row objects:** Plain `@dataclass` instances returned from repository queries (e.g., `Skill`)
+- **Request/response schemas:** Pydantic `BaseModel` subclasses (e.g., `SkillCreate`, `SkillRead`) for validation and serialization
+- **Database mapping:** Explicit in repository—convert dict rows to dataclass via `Skill(**row)` or to Pydantic via `SkillRead.model_validate(vars(skill))`
 
 ## Status & Next Steps
 
-**Currently:** Scaffold phase
+**Currently:** Scaffold phase with DBAPI integration
 - [x] Directory structure
 - [x] Flask monolith scaffold (config, auth, models...)
 - [x] Frontend scaffold (Jinja2, landing page, dashboard stub)
 - [x] Docker Compose (PostgreSQL, Redis, Qdrant, API, Web services)
-- [ ] Database migrations
+- [x] Database layer (psycopg2 DBAPI, connection pool, schema DDL)
+- [x] Skill CRUD API endpoints (list, create, read, update, delete)
 - [ ] Auth API endpoints (login, register, token refresh)
-- [ ] Skill CRUD endpoints
+- [ ] Skill CRUD view endpoints (HTML forms)
 - [ ] Learning path generator (LLM integration)
 - [ ] Frontend auth pages
 - [ ] Dashboard UI
-- [ ] Test suite
-- [ ] API documentation
+- [ ] Test suite (unit + integration)
+- [ ] API documentation (OpenAPI/Swagger)
 - [ ] Deployment pipeline (Terraform + ArgoCD)
 
 ## Debugging & Common Issues
@@ -298,6 +303,6 @@ Database queries use SQLAlchemy's async engine. Import `from app.db import get_d
 ## Related Reading
 
 - [Architecture Blueprint](specs/architecture_blueprint.md) — Full product spec
-- [FastAPI Docs](https://fastapi.tiangolo.com/)
-- [SQLModel Guide](https://sqlmodel.tiangolo.com/)
-- [Next.js Learn](https://nextjs.org/learn)
+- [psycopg2 Documentation](https://www.psycopg.org/docs/) — Database API
+- [Flask Documentation](https://flask.palletsprojects.com/en/stable/) — Web framework
+- [Pydantic Documentation](https://docs.pydantic.dev/) — Request/response validation

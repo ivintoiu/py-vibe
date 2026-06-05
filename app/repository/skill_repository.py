@@ -1,10 +1,10 @@
 """Data access layer for skills."""
 
 import logging
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+import psycopg2.extras
 
 from app.models import Skill, SkillCreate, SkillUpdate
 
@@ -12,47 +12,87 @@ logger = logging.getLogger(__name__)
 
 
 class SkillRepository:
-    """Repository for skill data access."""
+    """Repository for skill data access using psycopg2."""
 
-    def __init__(self, session: AsyncSession):
-        self.session = session
+    def __init__(self, conn):
+        self.conn = conn
 
-    async def create(self, user_id: int, skill_create: SkillCreate) -> Skill:
+    def create(self, user_id: int, skill_create: SkillCreate) -> Skill:
         """Create a new skill."""
-        skill = Skill(**skill_create.model_dump(), user_id=user_id)
-        self.session.add(skill)
-        await self.session.commit()
-        await self.session.refresh(skill)
-        return skill
+        with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                INSERT INTO skills (user_id, name, description, difficulty_level,
+                                    estimated_hours, icon_url, status)
+                VALUES (%s, %s, %s, %s, %s, %s, 'planning')
+                RETURNING id, user_id, name, description, difficulty_level,
+                          estimated_hours, icon_url, status, created_at, updated_at
+                """,
+                (
+                    user_id,
+                    skill_create.name,
+                    skill_create.description,
+                    skill_create.difficulty_level,
+                    skill_create.estimated_hours,
+                    skill_create.icon_url,
+                ),
+            )
+            row = cur.fetchone()
+        self.conn.commit()
+        return Skill(**row)
 
-    async def get_by_id(self, skill_id: int, user_id: int) -> Optional[Skill]:
+    def get_by_id(self, skill_id: int, user_id: int) -> Optional[Skill]:
         """Get skill by ID (with user ownership check)."""
-        stmt = select(Skill).where(Skill.id == skill_id, Skill.user_id == user_id)
-        result = await self.session.execute(stmt)
-        return result.scalars().first()
+        with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT * FROM skills WHERE id = %s AND user_id = %s",
+                (skill_id, user_id),
+            )
+            row = cur.fetchone()
+        return Skill(**row) if row else None
 
-    async def get_all_for_user(self, user_id: int, skip: int = 0, limit: int = 10) -> list[Skill]:
+    def get_all_for_user(self, user_id: int, skip: int = 0, limit: int = 10) -> list[Skill]:
         """Get all skills for a user with pagination."""
-        stmt = (
-            select(Skill)
-            .where(Skill.user_id == user_id)
-            .offset(skip)
-            .limit(limit)
-            .order_by(Skill.created_at.desc())
-        )
-        result = await self.session.execute(stmt)
-        return result.scalars().all()
+        with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT * FROM skills WHERE user_id = %s
+                ORDER BY created_at DESC LIMIT %s OFFSET %s
+                """,
+                (user_id, limit, skip),
+            )
+            rows = cur.fetchall()
+        return [Skill(**row) for row in rows]
 
-    async def update(self, skill: Skill, skill_update: SkillUpdate) -> Skill:
+    def update(self, skill: Skill, skill_update: SkillUpdate) -> Skill:
         """Update a skill."""
-        for key, value in skill_update.model_dump(exclude_unset=True).items():
-            setattr(skill, key, value)
-        self.session.add(skill)
-        await self.session.commit()
-        await self.session.refresh(skill)
-        return skill
+        updates = skill_update.model_dump(exclude_unset=True)
+        if not updates:
+            return skill
 
-    async def delete(self, skill: Skill) -> None:
+        updates["updated_at"] = datetime.utcnow()
+        set_clauses = ", ".join(f"{key} = %s" for key in updates)
+        values = list(updates.values()) + [skill.id, skill.user_id]
+
+        with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                f"""
+                UPDATE skills SET {set_clauses}
+                WHERE id = %s AND user_id = %s
+                RETURNING id, user_id, name, description, difficulty_level,
+                          estimated_hours, icon_url, status, created_at, updated_at
+                """,
+                values,
+            )
+            row = cur.fetchone()
+        self.conn.commit()
+        return Skill(**row)
+
+    def delete(self, skill: Skill) -> None:
         """Delete a skill."""
-        await self.session.delete(skill)
-        await self.session.commit()
+        with self.conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM skills WHERE id = %s AND user_id = %s",
+                (skill.id, skill.user_id),
+            )
+        self.conn.commit()

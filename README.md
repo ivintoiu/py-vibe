@@ -45,7 +45,8 @@ vibedrive/
 ## Tech Stack
 
 - **Framework:** Flask + Jinja2
-- **Database:** PostgreSQL + SQLAlchemy
+- **Database:** PostgreSQL + psycopg2 (raw DBAPI)
+- **Connection Pool:** ThreadedConnectionPool
 - **Cache:** Redis
 - **Vector DB:** Qdrant
 - **Auth:** JWT (python-jose)
@@ -68,11 +69,11 @@ mypy app/
 
 ### Database
 ```bash
-# Create migration
-alembic revision --autogenerate -m "message"
+# Apply schema (using raw SQL, no ORM migrations)
+psql postgresql://vibedrive:vibedrive@localhost:5432/vibedrive -f scripts/schema.sql
 
-# Apply migrations
-alembic upgrade head
+# Apply seed data
+psql postgresql://vibedrive:vibedrive@localhost:5432/vibedrive -f scripts/seed.sql
 ```
 
 ## Multi-Environment Deployment
@@ -129,14 +130,14 @@ MIT
 
 **Completed:**
 - ✅ Directory structure & Flask monolith
-- ✅ Database models (Skill, Auth)
-- ✅ API routes (auth, skills CRUD)
+- ✅ Database layer (psycopg2 DBAPI, connection pool, schema)
+- ✅ API routes (skills CRUD with full implementation)
 - ✅ Frontend scaffold (Jinja2, TailwindCSS, landing page)
 - ✅ Docker Compose (dev, test, UAT environments)
 - ✅ Pre-commit hooks & CI/CD
 
 **In Progress:**
-- 🚧 User authentication (JWT + sessions)
+- 🚧 User authentication (JWT token endpoints)
 - 🚧 Frontend auth & dashboard pages
 - 🚧 Learning path generator (LLM)
 

@@ -2,9 +2,10 @@
 
 import logging
 
-from flask import Flask
+from flask import Flask, jsonify
 
 from app.config.settings import settings
+from app.db.database import init_db_pool, teardown_db
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,10 @@ def create_app(env: str = "development") -> Flask:
         PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes
     )
 
+    # Initialize database pool
+    init_db_pool(app)
+    app.teardown_appcontext(teardown_db)
+
     # Register blueprints
     from app.routes.api import auth as api_auth
     from app.routes.api import skills as api_skills
@@ -37,6 +42,17 @@ def create_app(env: str = "development") -> Flask:
     # View routes (HTML)
     app.register_blueprint(view_auth.bp)
     app.register_blueprint(view_dashboard.bp)
+
+    # Error handlers
+    try:
+        import psycopg2
+
+        @app.errorhandler(psycopg2.OperationalError)
+        def handle_db_error(e):
+            logger.error(f"Database error: {e}")
+            return jsonify({"error": "Service temporarily unavailable"}), 503
+    except ImportError:
+        pass
 
     # Health check endpoint
     @app.route("/health")

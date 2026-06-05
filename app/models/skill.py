@@ -1,41 +1,40 @@
 """Skill data models."""
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from pydantic import BaseModel
 
 
-class SkillBase(SQLModel):
-    """Base skill model with common fields."""
+@dataclass
+class Skill:
+    """Skill data holder (read from database)."""
+
+    id: int
+    user_id: int
+    name: str
+    description: Optional[str]
+    difficulty_level: int
+    estimated_hours: int
+    icon_url: Optional[str]
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class SkillCreate(BaseModel):
+    """Schema for creating a skill."""
 
     name: str
     description: Optional[str] = None
-    difficulty_level: int = 1  # 1-5
+    difficulty_level: int = 1
     estimated_hours: int = 0
     icon_url: Optional[str] = None
 
 
-class Skill(SkillBase, table=True):
-    """Skill database model."""
-
-    __tablename__ = "skills"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    status: str = "planning"  # planning, learning, completed
-
-
-class SkillCreate(SkillBase):
-    """Schema for creating a skill."""
-
-    pass
-
-
-class SkillUpdate(SQLModel):
-    """Schema for updating a skill."""
+class SkillUpdate(BaseModel):
+    """Schema for updating a skill (all fields optional)."""
 
     name: Optional[str] = None
     description: Optional[str] = None
@@ -44,11 +43,18 @@ class SkillUpdate(SQLModel):
     status: Optional[str] = None
 
 
-class SkillRead(SkillBase):
-    """Schema for reading a skill."""
+class SkillRead(BaseModel):
+    """Schema for reading a skill in responses."""
 
     id: int
     user_id: int
+    name: str
+    description: Optional[str]
+    difficulty_level: int
+    estimated_hours: int
+    icon_url: Optional[str]
     status: str
     created_at: datetime
     updated_at: datetime
+
+    model_config = {"from_attributes": True}

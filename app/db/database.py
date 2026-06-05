@@ -1,30 +1,41 @@
-"""Database connection pool management."""
+"""Database connection pool management using psycopg2."""
 
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from flask import current_app, g
+from psycopg2 import pool
 
-from app.config import settings
+from app.config.settings import settings
 
 
-async def init_db_engine() -> AsyncEngine:
-    """Initialize and return async SQLAlchemy engine."""
-    engine = create_async_engine(
+def init_db_pool(app) -> None:
+    """Initialize psycopg2 connection pool."""
+    db_pool = pool.ThreadedConnectionPool(
+        1,
+        settings.database_pool_size,
         settings.database_url,
-        echo=settings.debug,
-        pool_size=settings.database_pool_size,
-        pool_pre_ping=True,
     )
-    return engine
+    app.extensions["db_pool"] = db_pool
 
 
-async def close_db_engine(engine: AsyncEngine) -> None:
-    """Close database engine."""
-    await engine.dispose()
+def close_db_pool(app) -> None:
+    """Close database pool."""
+    db_pool = app.extensions.pop("db_pool", None)
+    if db_pool is not None:
+        db_pool.closeall()
 
 
-def get_session_factory(engine: AsyncEngine):
-    """Create session factory."""
-    return async_sessionmaker(
-        engine,
-        expire_on_commit=False,
-        autoflush=False,
-    )
+def get_db():
+    """Get connection from pool for the current request."""
+    if "db_conn" not in g:
+        db_pool = current_app.extensions["db_pool"]
+        g.db_conn = db_pool.getconn()
+    return g.db_conn
+
+
+def teardown_db(exception) -> None:
+    """Return connection to pool at request end."""
+    conn = g.pop("db_conn", None)
+    if conn is not None:
+        db_pool = current_app.extensions["db_pool"]
+        if exception:
+            conn.rollback()
+        db_pool.putconn(conn)
