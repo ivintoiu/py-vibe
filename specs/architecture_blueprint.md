@@ -53,12 +53,12 @@ It’s designed for **students, professionals, and self‑learners**.
 ## **3. Architecture Overview**
 
 ### **Languages & Frameworks**
-- **Backend:** Python, FastAPI, SQLModel
-- **Frontend:** Next.js (React), TailwindCSS
+- **Backend:** Python, Flask, SQLAlchemy + SQLModel
+- **Frontend:** Jinja2 templates, TailwindCSS + vanilla JS
 - **AI Layer:** LangChain, OpenAI/Local LLMs
-- **Vector Search:** Qdrant or Weaviate
-- **Task Scheduling:** Celery + Redis or APScheduler
-- **Auth:** OAuth2 + JWT
+- **Vector Search:** Qdrant
+- **Task Scheduling:** Celery + Redis
+- **Auth:** JWT (python-jose) + bcrypt
 
 ---
 
