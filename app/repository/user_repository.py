@@ -20,7 +20,7 @@ class UserRepository:
         """Get user by username."""
         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT id, username, password_hash FROM users WHERE username = %s",
+                "SELECT id, username, email, password_hash FROM users WHERE username = %s",
                 (username,),
             )
             row = cur.fetchone()
@@ -30,7 +30,7 @@ class UserRepository:
         """Get user by ID."""
         with self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
-                "SELECT id, username, password_hash FROM users WHERE id = %s",
+                "SELECT id, username, email, password_hash FROM users WHERE id = %s",
                 (user_id,),
             )
             row = cur.fetchone()
@@ -43,7 +43,7 @@ class UserRepository:
                 """
                 INSERT INTO users (username, email, password_hash, created_at, updated_at)
                 VALUES (%s, %s, %s, NOW(), NOW())
-                RETURNING id, username, password_hash
+                RETURNING id, username, email, password_hash
                 """,
                 (username, email, password_hash),
             )
