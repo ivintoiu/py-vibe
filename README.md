@@ -91,7 +91,10 @@ See [docs/architecture.md](docs/architecture.md) for system design.
 
 ## API Routes
 
-- `POST /api/auth/token` — Get JWT token
+- `POST /api/auth/token` — Get JWT token (username/password auth)
+- `POST /api/auth/refresh` — Refresh JWT token (not implemented)
+- `POST /api/auth/logout` — Revoke JWT token (not implemented)
+- `POST /api/auth/register` — Register new user (not implemented)
 - `GET /api/skills` — List skills (JSON)
 - `POST /api/skills` — Create skill (JSON)
 - `GET /api/skills/{id}` — Get skill (JSON)
@@ -137,7 +140,8 @@ MIT
 - ✅ Pre-commit hooks & CI/CD
 
 **In Progress:**
-- 🚧 User authentication (JWT token endpoints)
+- 🚧 Token refresh & logout endpoints
+- 🚧 User registration endpoint
 - 🚧 Frontend auth & dashboard pages
 - 🚧 Learning path generator (LLM)
 

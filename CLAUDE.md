@@ -270,7 +270,8 @@ Connections are acquired from `ThreadedConnectionPool` via `get_db()` which is a
 - [x] Docker Compose (PostgreSQL, Redis, Qdrant, API, Web services)
 - [x] Database layer (psycopg2 DBAPI, connection pool, schema DDL)
 - [x] Skill CRUD API endpoints (list, create, read, update, delete)
-- [ ] Auth API endpoints (login, register, token refresh)
+- [x] Auth API endpoints (password verification, login with tokens) — Phase 1
+- [ ] Auth API endpoints (token refresh, logout, registration) — Phase 2-4
 - [ ] Skill CRUD view endpoints (HTML forms)
 - [ ] Learning path generator (LLM integration)
 - [ ] Frontend auth pages
