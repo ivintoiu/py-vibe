@@ -1,4 +1,6 @@
-Soft‑minimalist web design is a **clean, calm, and modern visual style** that reduces cognitive load and keeps the user focused on what matters. It’s especially effective for learning platforms because it creates a sense of clarity and mental space.
+# VibeDrive UI Design Blueprint
+
+VibeDrive is based on a soft-minimalist web design approach. This mean th web design is a **clean, calm, and modern visual style** that reduces cognitive load and keeps the user focused on what matters. It’s especially effective for learning platforms because it creates a sense of clarity and mental space.
 
 ---
 
@@ -79,14 +81,8 @@ Great — here is a **complete, production‑ready soft‑minimalist design syst
 
 ---
 
-# Soft‑Minimalist Design System
+# Soft‑Minimalist Design System Specification
 *(for a modern learning web app)*
-
-
-
-
-
----
 
 ## 1. **Foundations**
 
@@ -148,10 +144,6 @@ A simple 4‑point scale.
 ---
 
 ## 2. **Components**
-
-
-
-
 
 ### 🧩 **Cards**
 - Background: Neutral‑0
@@ -244,10 +236,6 @@ Avoid:
 ---
 
 ## 5. **Example Screens**
-
-
-
-
 
 ### Example pages you can build with this system
 - Dashboard with progress cards

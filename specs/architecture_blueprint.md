@@ -14,12 +14,6 @@
 
 It’s designed for **students, professionals, and self‑learners**.
 
-**Why it’s a great project for you:**
-- It has a **real UI**
-- It’s useful for everyday life
-- It teaches you **backend, frontend, embeddings, vector search, scheduling, auth, and cloud deployment**
-- It’s modular and can grow into a SaaS product
-
 ---
 
 ## **2. Core Features**
@@ -53,7 +47,8 @@ It’s designed for **students, professionals, and self‑learners**.
 ## **3. Architecture Overview**
 
 ### **Languages & Frameworks**
-- **Backend:** Python, Flask, SQLAlchemy + SQLModel
+- **Backend:** Python, Flask (synchronous monolith)
+- **Database:** PostgreSQL with psycopg2 DBAPI (raw SQL, ThreadedConnectionPool)
 - **Frontend:** Jinja2 templates, TailwindCSS + vanilla JS
 - **AI Layer:** LangChain, OpenAI/Local LLMs
 - **Vector Search:** Qdrant
@@ -171,4 +166,11 @@ It’s designed for **students, professionals, and self‑learners**.
 - People preparing for certifications
 - Anyone wanting structured self‑improvement
 
-**Utility Score:** 8/10
+---
+
+## Related Reading
+
+- [Project Context](../CLAUDE.md) — Implementation notes and design decisions
+- [psycopg2 Documentation](https://www.psycopg.org/docs/)
+- [Flask Documentation](https://flask.palletsprojects.com/en/stable/)
+- [Pydantic Documentation](https://docs.pydantic.dev/)

@@ -4,8 +4,11 @@ import logging
 from functools import wraps
 
 from flask import Blueprint, g, jsonify, request
+from pydantic import ValidationError
 
 from app.auth.auth import get_current_user_from_token
+from app.models import SkillCreate, SkillUpdate
+from app.services.skill_service import SkillService
 
 logger = logging.getLogger(__name__)
 
@@ -36,46 +39,62 @@ def require_api_auth(f):
 @require_api_auth
 def list_skills():
     """GET /api/skills - List user's skills."""
-    _skip = request.args.get("skip", 0, type=int)
-    _limit = request.args.get("limit", 10, type=int)
-    _user_id = g.user_id
-    # TODO: Implement with skill service
-    return jsonify([]), 200
+    skip = request.args.get("skip", 0, type=int)
+    limit = request.args.get("limit", 10, type=int)
+    skills = SkillService.get_user_skills(g.user_id, skip, limit)
+    return jsonify([s.model_dump(mode="json") for s in skills]), 200
 
 
 @bp.route("", methods=["POST"])
 @require_api_auth
 def create_skill():
     """POST /api/skills - Create a new skill."""
-    _user_id = g.user_id
-    _data = request.get_json()
-    # TODO: Implement with skill service
-    return jsonify({"error": "Not implemented"}), 501
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
+
+    try:
+        skill_create = SkillCreate(**data)
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 422
+
+    skill = SkillService.create_skill(g.user_id, skill_create)
+    return jsonify(skill.model_dump(mode="json")), 201
 
 
 @bp.route("/<int:skill_id>", methods=["GET"])
 @require_api_auth
 def get_skill(skill_id):
     """GET /api/skills/{id} - Get a specific skill."""
-    _user_id = g.user_id
-    # TODO: Implement with skill service
-    return jsonify({"error": "Not implemented"}), 501
+    skill = SkillService.get_skill(g.user_id, skill_id)
+    if skill is None:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(skill.model_dump(mode="json")), 200
 
 
 @bp.route("/<int:skill_id>", methods=["PATCH"])
 @require_api_auth
 def update_skill(skill_id):
     """PATCH /api/skills/{id} - Update a skill."""
-    _user_id = g.user_id
-    _data = request.get_json()
-    # TODO: Implement with skill service
-    return jsonify({"error": "Not implemented"}), 501
+    data = request.get_json(silent=True) or {}
+
+    try:
+        skill_update = SkillUpdate(**data)
+    except ValidationError as e:
+        return jsonify({"error": e.errors()}), 422
+
+    skill = SkillService.update_skill(g.user_id, skill_id, skill_update)
+    if skill is None:
+        return jsonify({"error": "Not found"}), 404
+
+    return jsonify(skill.model_dump(mode="json")), 200
 
 
 @bp.route("/<int:skill_id>", methods=["DELETE"])
 @require_api_auth
 def delete_skill(skill_id):
     """DELETE /api/skills/{id} - Delete a skill."""
-    _user_id = g.user_id
-    # TODO: Implement with skill service
+    deleted = SkillService.delete_skill(g.user_id, skill_id)
+    if not deleted:
+        return jsonify({"error": "Not found"}), 404
     return "", 204

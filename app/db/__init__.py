@@ -1,5 +1,5 @@
 """Database module."""
 
-from app.db.database import close_db_engine, get_session_factory, init_db_engine
+from app.db.database import close_db_pool, get_db, init_db_pool, teardown_db
 
-__all__ = ["init_db_engine", "close_db_engine", "get_session_factory"]
+__all__ = ["init_db_pool", "close_db_pool", "get_db", "teardown_db"]
