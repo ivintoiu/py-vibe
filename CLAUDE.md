@@ -137,10 +137,8 @@ docker compose up -d
 # Redis at localhost:6379
 # Qdrant at localhost:6333
 
-# Option 2: Local development (Python venv)
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-pip install -e ".[dev]"
+# Option 2: Local development
+uv sync --extra dev --no-install-project
 python main.py
 ```
 
@@ -229,7 +227,7 @@ For production deployments, use standard database migration tools (Alembic, Flyw
 See `.env.example` for all available vars. Key ones:
 
 ```
-ENVIRONMENT=development|test|uat|production
+APP_ENV=development|test|uat|production
 DEBUG=true|false
 DATABASE_URL=postgresql://user:pass@host:5432/db
 SECRET_KEY=<flask-secret-key>
@@ -248,7 +246,7 @@ OPENAI_API_KEY=<your-api-key>
 ## Important Notes
 
 ### Configuration Loading
-Environment-specific `.env` files are loaded automatically. `app/config/settings.py` will load `.env` first, then `.env.{environment}` to override. Set `ENVIRONMENT=test` to load `.env.test`.
+Environment-specific `.env` files are loaded automatically. `app/config/settings.py` will load `.env` first, then `.env.{app_env}` to override. Set `APP_ENV=test` to load `.env.test`.
 
 ### SQL Queries
 All SQL uses parameterized queries via psycopg2. Never concatenate user input into SQL strings. Queries are raw SQL in repositories (e.g., `app/repository/skill_repository.py`) for maximum visibility.
@@ -285,7 +283,7 @@ Connections are acquired from `ThreadedConnectionPool` via `get_db()` which is a
 **Flask app won't start?**
 - Check `.env` exists and `DATABASE_URL` is valid
 - Verify PostgreSQL is running: `docker compose ps`
-- Check Flask env: `ENVIRONMENT=development python main.py`
+- Check Flask env: `APP_ENV=development python main.py`
 
 **Tests failing?**
 - Ensure dev dependencies: `pip install -e ".[dev]"`

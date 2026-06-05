@@ -14,7 +14,7 @@ def test_settings_load():
 
 def test_settings_defaults():
     """Test that settings have proper defaults."""
-    assert settings.environment in ["development", "test", "uat", "production"]
+    assert settings.app_env in ["development", "test", "uat", "production"]
     assert settings.jwt_algorithm == "HS256"
     assert settings.jwt_expire_minutes == 30
 

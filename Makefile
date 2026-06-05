@@ -1,4 +1,4 @@
-.PHONY: help all install dev test lint format clean docker-up docker-down db-migrate seed pre-commit-install docker-test db-downgrade
+.PHONY: help smoke all install dev test lint format clean docker-up docker-down db-migrate seed pre-commit-install docker-test db-downgrade
 
 help:
 	@echo "VibeDrive - Flask Monolith"
@@ -28,6 +28,9 @@ help:
 	@echo "Cleanup:"
 	@echo "  make clean             Remove caches and builds"
 
+smoke:
+	pytest --version && ruff --version && black --version && mypy --version && python -c "import flask_testing; print('flask-testing OK')"
+
 all:
 	@echo "🚀 Running full development setup..."
 	$(MAKE) install
@@ -39,7 +42,7 @@ all:
 
 install:
 	@echo "📦 Installing dependencies..."
-	pip install -e ".[dev]" || (echo "❌ Installation failed" && exit 1)
+	uv sync --extra dev --no-install-project || (echo "❌ Installation failed" && exit 1)
 	@echo "✓ Dependencies installed"
 
 pre-commit-install:
@@ -49,7 +52,7 @@ pre-commit-install:
 
 dev:
 	@echo "🚀 Starting Flask development server..."
-	ENVIRONMENT=development python main.py || (echo "❌ Server crashed" && exit 1)
+	APP_ENV=development python main.py || (echo "❌ Server crashed" && exit 1)
 
 test:
 	@echo "🧪 Running test suite with coverage..."

@@ -7,7 +7,7 @@ services:
       dockerfile: infrastructure/Dockerfile
     restart: on-failure
     environment:
-      ENVIRONMENT: uat
+      APP_ENV: uat
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
       QDRANT_URL: ${QDRANT_URL}

@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68", "setuptools-scm>=7"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"
 
 [project]
 name = "vibedrive"
@@ -40,9 +40,6 @@ dev = [
     "pre-commit>=3.6.0",
 ]
 
-[tool.setuptools]
-packages = ["app", "tests"]
-
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -55,6 +52,7 @@ known-first-party = ["app"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.mypy]
 python_version = "3.12"

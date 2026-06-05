@@ -4,411 +4,207 @@
 
 ### Prerequisites
 - Docker & Docker Compose 2.0+
-- Python 3.11+
-- Node 18+
-- Git
+- Python 3.12+
+- uv
 
-### Quick Start
+### Option 1: Docker Compose (recommended)
 
 ```bash
 # 1. Clone repository
 git clone <repo-url>
-cd vibedrive
+cd py-vibe
 
 # 2. Copy environment
 cp .env.example .env
 
 # 3. Start all services
-docker compose -f infrastructure/docker-compose.yml up -d
+docker compose up -d
 
-# 4. Wait for services (check health)
-docker compose -f infrastructure/docker-compose.yml ps
+# App:      http://localhost:5000
+# Postgres: localhost:5432
+# Redis:    localhost:6379
+# Qdrant:   localhost:6333
 
-# 5. Access the app
-# Frontend: http://localhost:3000
-# API Docs: http://localhost:8000/docs
+# Check service health
+docker compose ps
 ```
 
-## Local Backend Development
+### Option 2: Local Python (no Docker)
 
 ```bash
-cd backend
-
 # Install dependencies
-uv pip install -e ".[dev]"
+uv sync --extra dev --no-install-project
 
-# Set environment variables
-export DATABASE_URL="postgresql+asyncpg://vibedrive:vibedrive@localhost:5432/vibedrive"
-export JWT_SECRET="dev-secret"
+# Copy and edit environment
+cp .env.example .env
 
-# Run migrations (when added)
-# python -m alembic upgrade head
-
-# Start with hot reload
-uvicorn src.main:app --reload --port 8000
+# Start Flask dev server
+python main.py
 ```
 
-## Local Frontend Development
+Requires a running PostgreSQL, Redis, and Qdrant (use `docker compose up postgres redis qdrant -d`).
+
+## Database
 
 ```bash
-cd frontend
+# Apply schema
+psql postgresql://vibedrive:vibedrive@localhost:5432/vibedrive -f scripts/schema.sql
 
-# Install dependencies
-npm install
+# Seed test data
+psql postgresql://vibedrive:vibedrive@localhost:5432/vibedrive -f scripts/seed.sql
 
-# Start dev server
-npm run dev
-
-# Build for production
-npm run build
-
-# Type checking
-npm run type-check
+# Or via Makefile
+make seed
 ```
 
 ## Testing
 
 ```bash
-cd backend
-
-# Run all tests
+# Run all tests (local)
 pytest tests/ -v
 
 # Run with coverage
-pytest tests/ -v --cov=src --cov-report=html
+pytest tests/ -v --cov=app --cov-report=html
 
-# Run specific test file
-pytest tests/test_auth.py -v
-
-# Run in watch mode
-pytest tests/ -v --looponfail
+# Run tests in Docker
+make docker-test
+# equivalent: docker compose -f docker-compose.test.yml up --build --abort-on-container-exit
 ```
 
 ## Code Quality
 
 ```bash
-cd backend
+# Lint + format (auto-fix)
+make format
 
-# Lint
+# Lint check only
 ruff check .
 
-# Format
-black src/ tests/
+# Format check only
+black --check app/ tests/
 
 # Type check
-mypy src/
+mypy app/
 
-# All checks
-ruff check . && black --check src/ && mypy src/
+# All checks (no auto-fix)
+make lint
 ```
 
 ## Docker Build
 
-### Build Images Locally
+### Build image locally
 
 ```bash
-# Backend
-docker build -f backend/Dockerfile -t vibedrive-api:latest .
-
-# Frontend
-docker build -f frontend/Dockerfile -t vibedrive-web:latest .
+docker build -f infrastructure/Dockerfile -t vibedrive:latest .
 ```
 
-### Push to Registry
+### Push to registry
 
 ```bash
-# Tag for registry
-docker tag vibedrive-api:latest myregistry.azurecr.io/vibedrive-api:latest
-docker tag vibedrive-web:latest myregistry.azurecr.io/vibedrive-web:latest
-
-# Push
-docker push myregistry.azurecr.io/vibedrive-api:latest
-docker push myregistry.azurecr.io/vibedrive-web:latest
+docker tag vibedrive:latest myregistry.azurecr.io/vibedrive:latest
+docker push myregistry.azurecr.io/vibedrive:latest
 ```
+
+## Environments
+
+Three compose files cover the full deployment lifecycle:
+
+| File | Environment | Usage |
+|---|---|---|
+| `docker-compose.yml` | Development | `docker compose up` |
+| `docker-compose.test.yml` | Test | `make docker-test` / CI |
+| `docker-compose.uat.yml` | UAT | Requires `.env.uat` with `DATABASE_URL`, `REDIS_URL`, `QDRANT_URL`, `DB_PASSWORD` |
+
+### UAT deployment
+
+```bash
+# Set environment variables (or populate .env.uat)
+export DATABASE_URL=postgresql://vibedrive:<pass>@<host>:5432/vibedrive
+export REDIS_URL=redis://<host>:6379/0
+export QDRANT_URL=http://<host>:6333
+export DB_PASSWORD=<pass>
+
+docker compose -f docker-compose.uat.yml up -d --build
+```
+
+## CI/CD (GitHub Actions)
+
+Workflows in `.github/workflows/`:
+
+| Workflow | Trigger | Actions |
+|---|---|---|
+| `ci.yml` | Every push / PR | pre-commit hooks (ruff, black, mypy, pytest) |
+| `deploy-test.yml` | `develop` branch | Docker build → test environment |
+| `deploy-uat.yml` | `release/*` branch | Docker build → UAT (Kustomize) |
+| `deploy-prod.yml` | Tag `v*.*.*` | Docker build → production (Terraform, manual approval) |
 
 ## Cloud Deployment (Planned)
 
-### AWS Deployment
-
-#### Terraform Setup
-```bash
-cd infrastructure/terraform
-
-# Initialize Terraform
-terraform init
-
-# Plan deployment
-terraform plan -var-file=production.tfvars
-
-# Apply
-terraform apply -var-file=production.tfvars
-```
-
-Resources provisioned:
-- ECS Cluster for containerized workloads
-- RDS PostgreSQL (Multi-AZ, automated backups)
-- ElastiCache Redis
-- Application Load Balancer (ALB)
-- CloudFront CDN
-- S3 buckets for assets/backups
-- IAM roles and policies
-- Security groups and VPC configuration
-
-#### Environment Variables in AWS
-
-Secrets stored in AWS Secrets Manager:
-```bash
-aws secretsmanager create-secret \
-  --name vibedrive/prod \
-  --secret-string '{
-    "JWT_SECRET": "...",
-    "OPENAI_API_KEY": "...",
-    "DATABASE_PASSWORD": "..."
-  }'
-```
-
-### Kubernetes Deployment
-
-#### Prerequisites
-- Kubernetes cluster (EKS, GKE, AKS)
-- Helm 3+
-- kubectl
-
-#### Deploy with Helm
+### Kubernetes
 
 ```bash
-# Add Helm repository (when available)
-helm repo add vibedrive https://helm.vibedrive.dev
-helm repo update
-
-# Install release
-helm install vibedrive vibedrive/vibedrive \
-  --namespace production \
-  --create-namespace \
-  --values values-prod.yaml
-
-# Upgrade
-helm upgrade vibedrive vibedrive/vibedrive \
-  --namespace production \
-  --values values-prod.yaml
-```
-
-#### Manual K8s Deployment
-
-```bash
-# Apply Kubernetes manifests
+# Apply manifests
 kubectl apply -f infrastructure/k8s/
 
 # Check rollout
-kubectl rollout status deployment/vibedrive-api -n production
-
-# Check pod status
-kubectl get pods -n production
+kubectl rollout status deployment/vibedrive -n production
 
 # View logs
-kubectl logs -f deployment/vibedrive-api -n production
+kubectl logs -f deployment/vibedrive -n production
+
+# Rollback
+kubectl rollout undo deployment/vibedrive -n production
 ```
 
-## CI/CD Pipeline
-
-### GitHub Actions
-
-Workflows defined in `.github/workflows/`:
-
-1. **test.yml** — Run on every push/PR
-   - Lint (ruff)
-   - Tests (pytest)
-   - Type check (mypy)
-   - Frontend build (next build)
-
-2. **deploy-staging.yml** — On merge to develop
-   - Build Docker images
-   - Push to staging registry
-   - Deploy to staging cluster
-
-3. **deploy-production.yml** — On tag release
-   - Build Docker images
-   - Push to production registry
-   - Deploy to production cluster (manual approval)
-
-### Example Workflow
-
-```yaml
-name: CI/CD
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run tests
-        run: cd backend && pytest tests/ -v
-      - name: Lint
-        run: cd backend && ruff check .
-      - name: Frontend build
-        run: cd frontend && npm ci && npm run build
-```
-
-## Monitoring & Observability
-
-### Prometheus Setup
+### Terraform
 
 ```bash
-# Verify metrics endpoint
-curl http://localhost:8000/metrics
+cd infrastructure/terraform
 
-# Configure Prometheus to scrape
-# infrastructure/prometheus.yml
+terraform init
+terraform plan -var-file=production.tfvars
+terraform apply -var-file=production.tfvars
 ```
 
-### Grafana Dashboards
-
-Dashboards available at:
-- API Performance: http://grafana:3000/d/api-performance
-- Database Metrics: http://grafana:3000/d/database-health
-- Resource Usage: http://grafana:3000/d/resource-usage
-
-### Log Aggregation
-
-Logs can be aggregated with ELK or Datadog:
+## Monitoring
 
 ```bash
-# Local logs
-tail -f py-vibe.log
+# Prometheus metrics
+curl http://localhost:5000/metrics
 
 # Container logs
-docker logs -f vibedrive-api
+docker logs -f vibedrive-app
 
 # Kubernetes logs
-kubectl logs -f deployment/vibedrive-api -n production
+kubectl logs -f deployment/vibedrive -n production
 ```
-
-## Backup & Disaster Recovery
-
-### Database Backups
-
-**Automated**
-- RDS automated backups (35-day retention)
-- Point-in-time recovery enabled
-
-**Manual**
-```bash
-# Backup PostgreSQL
-pg_dump postgresql://user:pass@host:5432/vibedrive > backup.sql
-
-# Restore
-psql postgresql://user:pass@host:5432/vibedrive < backup.sql
-```
-
-### Data Exports
-
-```bash
-# Export user data
-docker exec vibedrive-postgres pg_dump -U vibedrive vibedrive > export.sql
-
-# Restore to new environment
-docker exec vibedrive-postgres psql -U vibedrive vibedrive < export.sql
-```
-
-## Scaling
-
-### Horizontal Scaling
-
-**Backend**
-```bash
-# Docker Compose (manual)
-docker compose -f infrastructure/docker-compose.yml up -d --scale api=3
-
-# Kubernetes
-kubectl scale deployment vibedrive-api --replicas=5 -n production
-```
-
-**Frontend**
-```bash
-# Kubernetes
-kubectl scale deployment vibedrive-web --replicas=3 -n production
-```
-
-### Database Scaling
-
-**Read Replicas** (RDS)
-- Enable read replicas in RDS console
-- Update app to use read replica for SELECT queries
-
-**Connection Pooling**
-- Use PgBouncer or RDS Proxy
-- Configure pool size: `backend/src/db/database.py`
 
 ## Troubleshooting
 
-### Services Won't Start
+### Services won't start
 
 ```bash
-# Check logs
-docker compose -f infrastructure/docker-compose.yml logs api
-
-# Health checks
-docker compose -f infrastructure/docker-compose.yml ps
-
-# Rebuild
-docker compose -f infrastructure/docker-compose.yml up -d --build
+docker compose logs app
+docker compose ps
+docker compose up -d --build
 ```
 
-### Database Connection Errors
+### Database connection errors
 
 ```bash
-# Verify PostgreSQL is running
-docker compose -f infrastructure/docker-compose.yml exec postgres pg_isready
-
-# Check connection string in .env
-echo $DATABASE_URL
+# Check PostgreSQL is healthy
+docker compose exec postgres pg_isready -U vibedrive
 
 # Test connection
 psql $DATABASE_URL -c "SELECT 1"
 ```
 
-### High Memory Usage
+### Database backup / restore
 
 ```bash
-# Check resource limits
-docker stats vibedrive-api
+# Backup
+docker exec vibedrive-postgres pg_dump -U vibedrive vibedrive > backup.sql
 
-# Update limits in docker-compose.yml
-# Or Kubernetes resource requests/limits in k8s manifests
-```
-
-## Rollback Procedures
-
-### Docker Compose
-```bash
-# Revert to previous image
-docker pull vibedrive-api:v1.0.0
-docker compose -f infrastructure/docker-compose.yml up -d api
-```
-
-### Kubernetes
-```bash
-# Check rollout history
-kubectl rollout history deployment/vibedrive-api -n production
-
-# Rollback to previous
-kubectl rollout undo deployment/vibedrive-api -n production
-
-# Rollback to specific revision
-kubectl rollout undo deployment/vibedrive-api --to-revision=3 -n production
-```
-
-### Git
-```bash
-# Revert last commit
-git revert HEAD
-
-# Force push (use with caution!)
-git push --force-with-lease
+# Restore
+docker exec -i vibedrive-postgres psql -U vibedrive vibedrive < backup.sql
 ```
