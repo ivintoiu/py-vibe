@@ -2,6 +2,8 @@
 
 **Flask monolith** for defining skills, tracking milestones, and receiving AI-generated study plans.
 
+> **Note:** VibeDrive is built as a **Flask monolith** (single Python app with Jinja2 templates), not the FastAPI/Next.js stack mentioned in early specs. This decision prioritizes simplicity, faster development, and unified deployment. See [CLAUDE.md](CLAUDE.md) for architectural decisions.
+
 ## Quick Start
 
 ### Prerequisites
@@ -124,5 +126,25 @@ MIT
 ## Status
 
 🏗️ **Scaffold phase** — Early development
+
+**Completed:**
+- ✅ Directory structure & Flask monolith
+- ✅ Database models (Skill, Auth)
+- ✅ API routes (auth, skills CRUD)
+- ✅ Frontend scaffold (Jinja2, TailwindCSS, landing page)
+- ✅ Docker Compose (dev, test, UAT environments)
+- ✅ Pre-commit hooks & CI/CD
+
+**In Progress:**
+- 🚧 User authentication (JWT + sessions)
+- 🚧 Frontend auth & dashboard pages
+- 🚧 Learning path generator (LLM)
+
+**Not Started:**
+- ⏳ Milestones & subskill hierarchy
+- ⏳ Weekly AI study plans
+- ⏳ Resource embeddings & discovery
+- ⏳ Notifications & streaks
+- ⏳ Progress analytics
 
 See [CLAUDE.md](CLAUDE.md) for project context and [docs/](docs/) for detailed guides.

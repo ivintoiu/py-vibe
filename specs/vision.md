@@ -155,18 +155,18 @@ Embeddings match user skills to curated resources:
 ## **8. High‑Level Architecture**
 
 ### **Backend**
-- FastAPI
-- SQLModel
+- Flask (Python monolith)
+- SQLAlchemy + SQLModel
 - PostgreSQL
 - Redis
 - Qdrant (vector search)
-- Celery or APScheduler
+- Celery
 
 ### **Frontend**
-- Next.js
+- Jinja2 templates
 - TailwindCSS
-- React Query
-- GraphQL or REST
+- Vanilla JavaScript
+- REST API
 
 ### **AI Layer**
 - LangChain
@@ -184,14 +184,16 @@ Embeddings match user skills to curated resources:
 
 ## **9. Roadmap**
 
-### **Phase 1 — MVP (4–6 weeks)**
-- Skill creation UI
-- Milestones
-- Basic progress tracking
-- AI learning path generator
-- Weekly plan generator
-- PostgreSQL + FastAPI backend
-- Next.js UI
+### **Phase 1 — MVP (In Progress)**
+- ✅ Skill CRUD API (JSON)
+- ✅ Project scaffold (Flask monolith, Docker Compose, pre-commit)
+- ✅ Frontend scaffold (Jinja2, TailwindCSS, landing + dashboard stub)
+- 🚧 Skill creation UI (Jinja2 templates)
+- 🚧 User authentication (JWT + sessions)
+- ⏳ Milestones & progress tracking
+- ⏳ AI learning path generator
+- ⏳ Weekly plan generator
+- ⏳ Resource discovery (embeddings)
 
 ### **Phase 2 — Beta**
 - Resource embeddings
