@@ -12,7 +12,7 @@ def init_db_pool(app) -> None:
     db_pool = pool.ThreadedConnectionPool(
         1,
         settings.database_pool_size,
-        settings.database_url,
+        settings.database_url.get_secret_value(),
     )
     app.extensions["db_pool"] = db_pool
 
