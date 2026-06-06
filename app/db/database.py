@@ -9,6 +9,8 @@ from app.config.settings import get_settings
 def init_db_pool(app) -> None:
     """Initialize psycopg2 connection pool."""
     settings = get_settings()
+    if not settings.database_url:
+        raise RuntimeError("DATABASE_URL is not configured")
     db_pool = pool.ThreadedConnectionPool(
         1,
         settings.database_pool_size,

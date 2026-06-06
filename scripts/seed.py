@@ -130,6 +130,9 @@ def seed_skills(db):
 def main():
     """Run all seed operations."""
     settings = get_settings()
+    if not settings.database_url:
+        print("ERROR: DATABASE_URL is not configured")
+        sys.exit(1)
     print(f"Seeding database: {settings.database_url.get_secret_value()}")
 
     # Create Flask app to use get_db()
