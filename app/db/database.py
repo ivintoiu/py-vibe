@@ -3,15 +3,18 @@
 from flask import current_app, g
 from psycopg2 import pool
 
-from app.config.settings import settings
+from app.config.settings import get_settings
 
 
 def init_db_pool(app) -> None:
     """Initialize psycopg2 connection pool."""
+    settings = get_settings()
+    if not settings.database_url:
+        raise RuntimeError("DATABASE_URL is not configured")
     db_pool = pool.ThreadedConnectionPool(
         1,
         settings.database_pool_size,
-        settings.database_url,
+        settings.database_url.get_secret_value(),
     )
     app.extensions["db_pool"] = db_pool
 

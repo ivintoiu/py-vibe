@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask
 
 from app.auth.auth import hash_password
-from app.config.settings import settings
+from app.config.settings import get_settings
 from app.db import get_db, init_db_pool
 
 
@@ -129,7 +129,11 @@ def seed_skills(db):
 
 def main():
     """Run all seed operations."""
-    print(f"Seeding database: {settings.database_url}")
+    settings = get_settings()
+    if not settings.database_url:
+        print("ERROR: DATABASE_URL is not configured")
+        sys.exit(1)
+    print(f"Seeding database: {settings.database_url.get_secret_value()}")
 
     # Create Flask app to use get_db()
     app = Flask(__name__)

@@ -4,7 +4,7 @@ import logging
 
 from flask import Flask, jsonify
 
-from app.config.settings import settings
+from app.config.settings import get_settings
 from app.db.database import init_db_pool, teardown_db
 
 logger = logging.getLogger(__name__)
@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 def create_app(env: str = "development") -> Flask:
     """Create and configure Flask application."""
+    settings = get_settings()
     app = Flask(__name__, template_folder="templates", static_folder="static")
 
     # Configuration
@@ -20,7 +21,7 @@ def create_app(env: str = "development") -> Flask:
         DEBUG=settings.debug,
         SECRET_KEY=settings.secret_key,
         JSON_SORT_KEYS=False,
-        SESSION_COOKIE_SECURE=settings.app_env == "production",
+        SESSION_COOKIE_SECURE=env in ("production", "prod"),
         SESSION_COOKIE_HTTPONLY=True,
         PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes
     )
@@ -57,7 +58,7 @@ def create_app(env: str = "development") -> Flask:
     # Health check endpoint
     @app.route("/health")
     def health_check():
-        return {"status": "ok", "version": settings.app_version}, 200
+        return {"status": "ok", "version": get_settings().app_version}, 200
 
     # Home page
     @app.route("/")

@@ -40,4 +40,5 @@ jobs:
         run: pytest tests/ -v
         env:
           JWT_SECRET: "ci-test-secret"
-          DATABASE_URL: ""
+          SECRET_KEY: "ci-test-secret"
+          DATABASE_URL: "postgresql://test:test@localhost:5432/vibedrive_test"
