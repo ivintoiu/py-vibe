@@ -3,11 +3,12 @@
 from flask import current_app, g
 from psycopg2 import pool
 
-from app.config.settings import settings
+from app.config.settings import get_settings
 
 
 def init_db_pool(app) -> None:
     """Initialize psycopg2 connection pool."""
+    settings = get_settings()
     db_pool = pool.ThreadedConnectionPool(
         1,
         settings.database_pool_size,

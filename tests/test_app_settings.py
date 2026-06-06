@@ -2,11 +2,12 @@
 
 import pytest
 
-from app.config.settings import settings
+from app.config.settings import get_settings
 
 
 def test_settings_load():
     """Test that settings can be loaded from environment."""
+    settings = get_settings()
     assert settings is not None
     assert settings.app_name == "VibeDrive"
     assert settings.app_version == "0.1.0"
@@ -14,7 +15,7 @@ def test_settings_load():
 
 def test_settings_defaults():
     """Test that settings have proper defaults."""
-    assert settings.app_env in ["development", "test", "uat", "production"]
+    settings = get_settings()
     assert settings.jwt_algorithm == "HS256"
     assert settings.jwt_expire_minutes == 30
 

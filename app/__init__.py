@@ -4,9 +4,10 @@ import logging
 
 from flask import Flask, jsonify
 
-from app.config.settings import settings
+from app.config.settings import get_settings
 from app.db.database import init_db_pool, teardown_db
 
+settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
@@ -18,9 +19,9 @@ def create_app(env: str = "development") -> Flask:
     app.config.update(
         APP_ENV=env,
         DEBUG=settings.debug,
-        SECRET_KEY=settings.secret_key,
+        SECRET_KEY=settings.jwt_secret,
         JSON_SORT_KEYS=False,
-        SESSION_COOKIE_SECURE=settings.app_env == "production",
+        SESSION_COOKIE_SECURE=env == "production",
         SESSION_COOKIE_HTTPONLY=True,
         PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes
     )
