@@ -52,6 +52,7 @@ def create_app(env: str = "development") -> Flask:
         def handle_db_error(e):
             logger.error(f"Database error: {e}")
             return jsonify({"error": "Service temporarily unavailable"}), 503
+
     except ImportError:
         pass
 
