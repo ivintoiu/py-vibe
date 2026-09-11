@@ -261,16 +261,16 @@ OPENAI_API_KEY=<your-api-key>
 
 **Environment-specific files:**
 
-- `.env` — local development (git-ignored)
-- `.env.test` — test environment (in git)
-- `.env.uat` — UAT template (not in git)
-- `.env.prod.example` — production template (not in git)
+- `.env.example` - template (in git)
+- `.env.dev` — local development (git-ignored)
+- `.env.test` — test environment (git-ignored)
+- `.env.uat` — UAT template (git-ignored)
 
 ## Important Notes
 
 ### Configuration Loading
 
-Environment-specific `.env` files are loaded automatically. `app/config/settings.py` will load `.env` first, then `.env.{app_env}` to override. Set `APP_ENV=test` to load `.env.test`.
+Environment-specific `.env.*` files are loaded automatically. `app/config/settings.py` will `.env.{app_env}` to override. Set `APP_ENV=test` to load `.env.test`.
 
 ### SQL Queries
 
