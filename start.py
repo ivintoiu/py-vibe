@@ -13,9 +13,8 @@ def test_anthropic_connection():
     if settings.anthropic_model is None:
         raise ValueError("ANTHROPIC_MODEL is not set in environment")
 
-    api_key = settings.anthropic_api_key.get_secret_value()
     model = ChatAnthropic(
-        api_key=api_key,
+        api_key=settings.anthropic_api_key,
         timeout=30,
         model_name=settings.anthropic_model,
         stop=None,

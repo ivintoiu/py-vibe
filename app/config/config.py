@@ -2,6 +2,7 @@
 
 import os
 from enum import Enum
+from functools import lru_cache
 
 from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -37,10 +38,15 @@ class AnthropicSettings(BaseSettings):
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "AnthropicSettings":
         """Ensure API key is configured in production."""
-        if self.app_env in _PROD_ENVS:
-            if not self.anthropic_api_key:
-                raise ValueError("ANTHROPIC_API_KEY must be set in production")
+        if self.app_env in _PROD_ENVS and not self.anthropic_api_key:
+            raise ValueError("ANTHROPIC_API_KEY must be set in production")
         return self
 
 
-settings = AnthropicSettings()
+@lru_cache(maxsize=1)
+def get_settings() -> AnthropicSettings:
+    """Get cached Anthropic settings instance."""
+    return AnthropicSettings()
+
+
+settings = get_settings()
