@@ -1,33 +1,30 @@
-# from langchain.chat_models import init_chat_model
+"""Test Anthropic LLM integration."""
+
 from langchain_anthropic import ChatAnthropic
 
 from app.config.config import settings
 
-print(settings)
+
+def test_anthropic_connection():
+    """Test that ChatAnthropic initializes successfully with config."""
+    if settings.anthropic_api_key is None:
+        raise ValueError("ANTHROPIC_API_KEY is not set in environment")
+
+    if settings.anthropic_model is None:
+        raise ValueError("ANTHROPIC_MODEL is not set in environment")
+
+    api_key = settings.anthropic_api_key.get_secret_value()
+    model = ChatAnthropic(
+        api_key=api_key,
+        timeout=30,
+        model_name=settings.anthropic_model,
+        stop=None,
+    )
+
+    response = model.invoke("What's the capital of Romania?")
+    print(f"Response: {response}")
+    assert response is not None
 
 
-# Set the API key as an environment variable for LangChain
-# os.environ["ANTHROPIC_API_KEY"] = settings.ANTHROPIC_API_KEY # type: ignore
-
-# model = init_chat_model(
-#     model=settings.ANTHROPIC_MODEL,
-#     model_provider="anthropic",
-#     api_key=settings.ANTHROPIC_API_KEY,
-# )
-
-if settings.ANTHROPIC_API_KEY is None:
-    raise ValueError("ANTHROPIC_API_KEY is not set in environment")
-
-if settings.ANTHROPIC_MODEL is None:
-    raise ValueError("ANTHROPIC_MODEL is not set in environment")
-
-model = ChatAnthropic(
-    api_key=settings.ANTHROPIC_API_KEY,
-    timeout=30,
-    model_name=settings.ANTHROPIC_MODEL,
-    stop=None,
-)
-
-response = model.invoke("What's the capital of Romania?")
-
-print(response)
+if __name__ == "__main__":
+    test_anthropic_connection()
