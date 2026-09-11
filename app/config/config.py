@@ -29,7 +29,7 @@ class AnthropicSettings(BaseSettings):
     anthropic_model: str = "claude-haiku-4-5-20251001"
 
     model_config = SettingsConfigDict(
-        env_file=(".env", f".env.{_environment}"),
+        env_file=f".env.{_environment}",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
