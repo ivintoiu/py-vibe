@@ -1,8 +1,14 @@
+"""Anthropic LLM configuration."""
+
 import os
 from enum import Enum
 
-from pydantic import SecretStr
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_environment = os.getenv("APP_ENV", "dev")
+_PROD_ENVS = {"production", "prod"}
+_PLACEHOLDER = "dev-secret-change-in-production"
 
 
 class Environment(str, Enum):
@@ -14,19 +20,27 @@ class Environment(str, Enum):
     PRODUCTION = "prod"
 
 
-_environment = os.getenv("APP_ENV", "dev")
+class AnthropicSettings(BaseSettings):
+    """Configuration for Anthropic LLM integration."""
 
-
-class Settings(BaseSettings):
-    ANTHROPIC_API_KEY: SecretStr | None = None
-    ANTHROPIC_MODEL: str | None = "claude-haiku-4-5-20251001"
+    app_env: str = os.getenv("APP_ENV", "dev")
+    anthropic_api_key: SecretStr | None = None
+    anthropic_model: str = "claude-haiku-4-5-20251001"
 
     model_config = SettingsConfigDict(
-        env_file=f".env.{_environment}",
+        env_file=(".env", f".env.{_environment}"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
     )
 
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "AnthropicSettings":
+        """Ensure API key is configured in production."""
+        if self.app_env in _PROD_ENVS:
+            if not self.anthropic_api_key:
+                raise ValueError("ANTHROPIC_API_KEY must be set in production")
+        return self
 
-settings = Settings()
+
+settings = AnthropicSettings()
