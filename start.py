@@ -20,7 +20,16 @@ def test_anthropic_connection():
         stop=None,
     )
 
-    response = model.invoke("What's the capital of Romania?")
+    messages = [
+        {
+            "role": "system",
+            "content": "You are an experience Geographer. Your answer are just one sentence, no more",
+        },
+        {"role": "user", "content": "What's the capital of Romania"},
+    ]
+
+    response = model.invoke(messages)
+
     print(f"Response: {response}")
     assert response is not None
 
