@@ -1,6 +1,7 @@
 """Test Anthropic LLM integration."""
 
 from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.config.config import settings
 
@@ -18,14 +19,12 @@ def test_anthropic_connection():
         timeout=30,
         model_name=settings.anthropic_model,
         stop=None,
+        max_retries=2,
     )
 
     messages = [
-        {
-            "role": "system",
-            "content": "You are an experience Geographer. Your answer are just one sentence, no more",
-        },
-        {"role": "user", "content": "What's the capital of Romania"},
+        SystemMessage("You are an experience Geographer. Your answer are just one sentence, no more"),
+        HumanMessage("What's the capital of Romania"),
     ]
 
     response = model.invoke(messages)
